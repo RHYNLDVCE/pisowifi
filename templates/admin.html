@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PisoWifi Admin</title>
+    <style>
+        body { font-family: sans-serif; background: #f3f4f6; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h3 { margin-top: 0; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 100px; }
+        button { padding: 10px 20px; background: #4f46e5; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Admin Dashboard</h1>
+    
+    <div class="card">
+        <h3>⚙️ Machine Settings</h3>
+        <form action="/admin/update_settings" method="post">
+            <label><strong>Coin Slot Timeout:</strong></label>
+            <input type="number" name="timeout" value="{{ slot_timeout }}" min="10" max="120">
+            <span>seconds</span>
+            <button type="submit">Save Settings</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>💰 Total Sales</h3>
+        <h1>₱ {{ total_sales }}</h1>
+    </div>
+
+    <div class="card">
+        <h3>👥 Active Users</h3>
+        <table width="100%" border="1" cellpadding="10" style="border-collapse:collapse; border-color:#eee;">
+            <tr>
+                <th>MAC</th>
+                <th>Time Remaining</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            {% for mac, user in users.items() %}
+            <tr>
+                <td>{{ mac }}</td>
+                <td>{{ user.time }} sec</td>
+                <td>{{ user.status }}</td>
+                <td>
+                    <form action="/admin/add_time" method="post" style="display:inline;">
+                        <input type="hidden" name="mac" value="{{ mac }}">
+                        <button style="background:green;">+5 Mins</button>
+                    </form>
+                    <form action="/admin/block" method="post" style="display:inline;">
+                        <input type="hidden" name="mac" value="{{ mac }}">
+                        <button style="background:red;">Block</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <a href="/logout">Logout</a>
+</body>
+</html>

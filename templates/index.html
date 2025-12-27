@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REYES Starlink PisoWifi</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            --bg-color: #f3f4f6;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --success: #10b981;
+            --danger: #ef4444;
+            --pause: #f97316; /* Orange for Pause button */
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .main-wrapper {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-color);
+        }
+
+        /* HEADER */
+        .header {
+            background: var(--primary-gradient);
+            background-size: cover;
+            background-position: center;
+            color: white;
+            text-align: center;
+            padding-bottom: 60px;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+        }
+        
+        .header-overlay {
+            background: rgba(0, 0, 0, 0.2); 
+            padding: 40px 20px 20px;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+        }
+        
+        .header h2 { margin-bottom: 5px; font-weight: 800; font-size: 1.6rem; }
+        .status-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.25);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-top: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* TIMER SECTION */
+        .timer-section {
+            background: white;
+            margin: -40px 20px 0; 
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .timer-display { font-size: 3.5em; font-weight: 800; margin: 5px 0; line-height: 1; }
+        .timer-label { color: var(--text-muted); font-size: 0.75em; text-transform: uppercase; font-weight: bold; }
+
+        /* INFO BAR */
+        .info-bar {
+            margin-top: 10px; padding-top: 10px; border-top: 1px solid #f3f4f6;
+            font-size: 0.75em; color: #9ca3af; font-family: monospace;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* BUTTONS */
+        .actions { padding: 30px 20px; display: flex; flex-direction: column; gap: 15px; flex-grow: 1; }
+        .btn { border: none; width: 100%; padding: 18px; border-radius: 15px; font-size: 1.1em; font-weight: bold; cursor: pointer; transition: transform 0.2s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--text-main); color: white; }
+        .btn-insert { background: var(--success); color: white; }
+        .btn-busy { background: #d1d5db; color: #9ca3af; cursor: not-allowed; }
+        .btn-outline { background: transparent; border: 2px solid #e5e7eb; color: var(--text-muted); padding: 15px; font-size: 0.95em; }
+        
+        /* NEW: Pause Button Style */
+        .btn-pause { background: var(--pause); color: white; }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-card {
+            background: white; width: 85%; max-width: 320px; border-radius: 20px; padding: 30px 20px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .coin-icon { font-size: 3em; display: block; animation: bounce 1s infinite; margin-bottom: 5px; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .slot-timer-container { font-size: 0.9em; color: #6b7280; }
+        .slot-timer-number { font-weight: 800; color: #4f46e5; }
+
+        .coin-info { background: #f3f4f6; padding: 15px; border-radius: 12px; margin-top: 5px; border: 2px solid #e5e7eb; }
+        .coin-info h4 { color: #6b7280; font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .coin-info .total-time { color: #111827; font-weight: 900; font-size: 1.5em; line-height: 1; }
+
+        .progress-container { width: 100%; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, #4f46e5, #7c3aed); width: 100%; transition: width 1s linear, background 0.3s; }
+
+        .btn-modal-action { width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; color: white; font-size: 1em; margin-top: 5px; }
+        .action-cancel { background: var(--danger); }
+        .action-done { background: var(--success); animation: pulse-green 1.5s infinite; }
+        @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <div id="appHeader" class="header">
+            <div class="header-overlay">
+                <h2>REYES Starlink</h2>
+                <p>High-Speed Fiber Connectivity</p>
+                <div id="statusBadge" class="status-badge">Loading...</div>
+            </div>
+        </div>
+
+        <div class="timer-section">
+            <div class="timer-label">Time Remaining</div>
+            <div id="timeDisplay" class="timer-display">00:00</div>
+            <div id="connectionStatus" style="font-size: 0.9em; color: #888;">Checking...</div>
+            <div class="info-bar">
+                IP: <span id="ipDisplay">...</span> &nbsp;|&nbsp; MAC: <span id="macDisplay">...</span>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="btnInsert" class="btn btn-primary" onclick="activateSlot()">Insert Coin</button>
+            <button id="btnAction" class="btn btn-busy" disabled>Start Internet</button>
+            <button class="btn btn-outline" onclick="alert('Rates: ₱1 = 5 Mins, ₱5 = 30 Mins')">View Rates</button>
+        </div>
+    </div>
+
+    <div id="coinModal" class="modal-overlay">
+        <div class="modal-card">
+            <div>
+                <span class="coin-icon">🪙</span>
+                <h3>Insert Coins Now</h3>
+                <div class="slot-timer-container">
+                    Slot closes in <span id="slotSeconds" class="slot-timer-number">30</span> seconds
+                </div>
+            </div>
+            <div class="progress-container">
+                <div id="slotProgressBar" class="progress-bar"></div>
+            </div>
+            <div class="coin-info">
+                <h4>You Inserted</h4>
+                <div class="total-time" id="modalSessionTime">0 Mins</div>
+            </div>
+            <button id="btnModalAction" class="btn-modal-action action-cancel" onclick="handleModalAction()">CANCEL</button>
+        </div>
+    </div>
+
+    <script>
+        var mac = "{{ mac }}";
+        var bannerUrl = "{{ banner_url }}"; 
+        
+        if (bannerUrl && bannerUrl.length > 5) document.getElementById("appHeader").style.backgroundImage = "url('" + bannerUrl + "')";
+        var badChar = String.fromCharCode(123);
+        if (!mac || mac.startsWith("None") || mac.startsWith(badChar)) mac = "Unknown";
+        document.getElementById("macDisplay").innerText = mac;
+        document.getElementById("ipDisplay").innerText = "{{ ip }}";
+
+        let isModalOpen = false;
+        let initialTimeSnapshot = -1; 
+        let sessionAddedTime = 0;     
+
+        setInterval(async () => {
+            if (mac === "Unknown") return;
+            try {
+                let res = await fetch(`/status?mac=${mac}`);
+                let data = await res.json();
+                
+                let h = Math.floor(data.time_remaining / 3600);
+                let m = Math.floor((data.time_remaining % 3600) / 60);
+                let s = data.time_remaining % 60;
+                let formattedTime = (h > 0 ? h + ":" : "") + (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+                document.getElementById("timeDisplay").innerText = formattedTime;
+
+                if (data.slot_seconds > 0) {
+                    if (!isModalOpen) {
+                        initialTimeSnapshot = data.time_remaining;
+                        isModalOpen = true;
+                        document.getElementById("coinModal").style.display = "flex";
+                    }
+                    let base = (initialTimeSnapshot < 0) ? 0 : initialTimeSnapshot;
+                    sessionAddedTime = Math.max(0, data.time_remaining - base);
+                    updateModalContent(data.slot_seconds, data.slot_max_seconds, sessionAddedTime);
+                } else {
+                    if (isModalOpen) closeModal(); 
+                }
+
+                updateUI(data);
+            } catch (e) { console.log(e); }
+        }, 1000);
+
+        function updateModalContent(secondsLeft, maxSeconds, addedSeconds) {
+            document.getElementById("slotSeconds").innerText = secondsLeft;
+            const bar = document.getElementById("slotProgressBar");
+            const percentage = (secondsLeft / maxSeconds) * 100;
+            bar.style.width = percentage + "%";
+            if (percentage < 30) bar.style.background = "#ef4444"; 
+            else bar.style.background = "linear-gradient(90deg, #4f46e5, #7c3aed)"; 
+
+            document.getElementById("modalSessionTime").innerText = formatHumanTime(addedSeconds);
+
+            const btn = document.getElementById("btnModalAction");
+            if (addedSeconds > 0) {
+                btn.innerText = "DONE & CONNECT";
+                btn.className = "btn-modal-action action-done";
+            } else {
+                btn.innerText = "CANCEL";
+                btn.className = "btn-modal-action action-cancel";
+            }
+        }
+
+        function handleModalAction() {
+            if (sessionAddedTime > 0) connectInternet();
+            closeModal();
+        }
+
+        function closeModal() {
+            document.getElementById("coinModal").style.display = "none";
+            isModalOpen = false;
+            initialTimeSnapshot = -1;
+            sessionAddedTime = 0;
+        }
+
+        function formatHumanTime(seconds) {
+            if (seconds === 0) return "0 Mins";
+            let h = Math.floor(seconds / 3600);
+            let m = Math.floor((seconds % 3600) / 60);
+            let s = seconds % 60;
+            let parts = [];
+            if (h > 0) parts.push(h + " Hrs");
+            if (m > 0) parts.push(m + " Mins");
+            if (s > 0 && h === 0) parts.push(s + " Secs");
+            return parts.join(" ");
+        }
+
+        function updateUI(data) {
+            let btnInsert = document.getElementById("btnInsert");
+            let btnAction = document.getElementById("btnAction");
+            let statusBadge = document.getElementById("statusBadge");
+            let connStatus = document.getElementById("connectionStatus");
+
+            // CRITICAL: This is the Logic for the Pause Button
+            if (data.status === "connected") {
+                statusBadge.innerText = "ONLINE"; 
+                statusBadge.style.background = "#d1fae5"; 
+                statusBadge.style.color = "#064e3b";
+                connStatus.innerText = "Internet Active";
+                
+                // Show PAUSE TIME button
+                btnAction.innerText = "PAUSE TIME";
+                btnAction.className = "btn btn-pause";
+                btnAction.disabled = false;
+                btnAction.onclick = pauseInternet; 
+
+                btnInsert.innerText = "Extend Time"; 
+                btnInsert.className = "btn btn-primary";
+
+            } else if (data.status === "paused") {
+                statusBadge.innerText = "PAUSED"; 
+                statusBadge.style.background = "#ffedd5"; 
+                statusBadge.style.color = "#c2410c";
+                connStatus.innerText = "Time Paused";
+                
+                // Show RESUME TIME button
+                btnAction.innerText = "RESUME TIME";
+                btnAction.className = "btn btn-insert"; 
+                btnAction.disabled = false;
+                btnAction.onclick = connectInternet;
+
+                btnInsert.innerText = "Add More Coins"; 
+                btnInsert.className = "btn btn-outline";
+
+            } else if (data.time_remaining > 0) {
+                statusBadge.innerText = "READY"; 
+                statusBadge.style.background = "#fff"; 
+                statusBadge.style.color = "#333";
+                connStatus.innerText = "Time Loaded";
+                
+                btnAction.disabled = false; 
+                btnAction.className = "btn btn-insert"; 
+                btnAction.innerText = "START INTERNET"; 
+                btnAction.onclick = connectInternet;
+                
+                btnInsert.innerText = "Add More Coins"; 
+                btnInsert.className = "btn btn-outline";
+
+            } else if (data.is_busy && !isModalOpen) {
+                statusBadge.innerText = "BUSY"; 
+                statusBadge.style.background = "#fee2e2"; 
+                statusBadge.style.color = "#991b1b";
+                
+                btnInsert.innerText = "Slot Busy..."; 
+                btnInsert.className = "btn btn-busy"; 
+                btnInsert.disabled = true;
+
+            } else {
+                statusBadge.innerText = "DISCONNECTED"; 
+                statusBadge.style.background = "rgba(255,255,255,0.2)"; 
+                statusBadge.style.color = "white";
+                connStatus.innerText = "No Time";
+                
+                btnAction.innerText = "Start Internet"; 
+                btnAction.className = "btn btn-busy"; 
+                btnAction.disabled = true;
+                
+                btnInsert.innerText = "Insert Coin"; 
+                btnInsert.className = "btn btn-primary"; 
+                btnInsert.disabled = false;
+            }
+        }
+
+        function activateSlot() {
+            fetch(`/enable_slot?mac=${mac}`).then(r => r.json()).then(d => {
+                if(d.result !== "success") alert("System Busy");
+            });
+        }
+
+        function connectInternet() {
+            fetch(`/connect?mac=${mac}`, {method:'POST'}).then(r => r.json()).then(d => {
+                if(d.result === "success") { window.location.href = "http://www.google.com"; }
+            });
+        }
+
+        function pauseInternet() {
+            fetch(`/pause?mac=${mac}`, {method:'POST'}).then(r => r.json()).then(d => {
+                if(d.result === "success") { alert("Time Paused."); }
+            });
+        }
+    </script>
+</body>
+</html>
