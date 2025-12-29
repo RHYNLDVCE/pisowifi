@@ -82,16 +82,22 @@ def _time_manager():
 
 def _connectivity_monitor():
     """
-    Smarter Activity Monitor with Admin Toggle
+    Smarter Activity Monitor: Checks Bytes AND Packets
+    Prevents gaming disconnection (Lobby/Queue/Gameplay).
     """
-    TRAFFIC_THRESHOLD = 50000 # 50KB
+    # Thresholds for a 5-second interval
+    BYTES_THRESHOLD = 5000     # 5KB (Browsing/Downloading)
+    
+    # CHANGED: Lowered to 1. If they send ANY packet, they are active.
+    # This protects users sitting in lobbies or long queues.
+    PACKET_THRESHOLD = 1       
 
     while True:
         time.sleep(5) 
         
         # 1. CHECK MASTER SWITCH
         if not state.config.get("auto_pause_enabled", True):
-            continue # Feature is OFF, do nothing
+            continue 
             
         timeout_limit = int(state.config.get("inactive_timeout", 60))
         now = time.time()
@@ -99,28 +105,42 @@ def _connectivity_monitor():
         for mac, data in list(state.users.items()):
             if data["status"] == "connected":
                 
-                # Get Traffic Stats
-                current_bytes = firewall.get_user_bytes(mac)
-                previous_bytes = data.get("last_byte_count", 0)
+                # --- NEW LOGIC: Get Bytes AND Packets ---
+                curr_bytes, curr_packets = firewall.get_user_traffic(mac)
                 
-                if previous_bytes == 0:
-                    data["last_byte_count"] = current_bytes
+                prev_bytes = data.get("last_byte_count", 0)
+                prev_packets = data.get("last_packet_count", 0)
+                
+                # Initialize if first run
+                if prev_bytes == 0:
+                    data["last_byte_count"] = curr_bytes
+                    data["last_packet_count"] = curr_packets
                     continue
 
-                diff = current_bytes - previous_bytes
-                if diff < 0: diff = 0 
+                diff_bytes = curr_bytes - prev_bytes
+                diff_packets = curr_packets - prev_packets
                 
-                data["last_byte_count"] = current_bytes
+                if diff_bytes < 0: diff_bytes = 0 
+                if diff_packets < 0: diff_packets = 0
+                
+                # Update history
+                data["last_byte_count"] = curr_bytes
+                data["last_packet_count"] = curr_packets
 
-                # Check Activity
-                if diff > TRAFFIC_THRESHOLD:
+                # --- CHECK ACTIVITY ---
+                # User is active if:
+                # 1. They are downloading > 5KB (Youtube/Facebook)
+                # 2. OR they sent > 1 Packet (Gaming Lobby/Queue/Match)
+                is_active = (diff_bytes > BYTES_THRESHOLD) or (diff_packets >= PACKET_THRESHOLD)
+
+                if is_active:
                     data["last_active"] = now 
                 else:
                     last_seen = data.get("last_active", now)
                     idle_time = int(now - last_seen)
                     
                     if idle_time > timeout_limit:
-                        print(f"💤 Auto-Pausing User {mac} (Idle for {idle_time}s)")
+                        print(f"💤 Auto-Pausing User {mac} (Idle {idle_time}s | B:{diff_bytes} P:{diff_packets})")
                         
                         data["status"] = "paused"
                         firewall.block_user(mac)

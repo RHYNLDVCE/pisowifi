@@ -38,7 +38,8 @@ async def admin_panel(request: Request, authorized: bool = Depends(security.is_a
         "inactive_timeout": state.config.get("inactive_timeout", 60),
         "auto_pause_enabled": state.config.get("auto_pause_enabled", True),
         "speed_limit_enabled": state.config.get("speed_limit_enabled", False),
-        "global_speed_limit": state.config.get("global_speed_limit", 5)
+        "global_speed_limit": state.config.get("global_speed_limit", 5),
+        "gaming_mode_enabled": state.config.get("gaming_mode_enabled", False)  # <-- PASS TO TEMPLATE
     })
 
 @router.post("/admin/upload_banner")
@@ -54,6 +55,7 @@ async def update_settings(
     auto_pause: str = Form(None),
     speed_limit_val: int = Form(...),
     speed_limit_toggle: str = Form(None),
+    gaming_mode: str = Form(None), # <-- NEW FORM FIELD
     authorized: bool = Depends(security.is_admin)
 ):
     # Update Memory
@@ -62,9 +64,13 @@ async def update_settings(
     state.config["auto_pause_enabled"] = (auto_pause == "on")
     state.config["global_speed_limit"] = speed_limit_val
     state.config["speed_limit_enabled"] = (speed_limit_toggle == "on")
+    state.config["gaming_mode_enabled"] = (gaming_mode == "on") # <-- SAVE SETTING
     
-    # SAVE TO FILE (The Fix)
+    # SAVE TO FILE
     state.save_config()
+    
+    # Apply changes immediately
+    firewall.refresh_all_limits(state.users)
     
     return RedirectResponse(url="/admin", status_code=303)
 

@@ -84,6 +84,17 @@
                     <input type="number" name="speed_limit_val" value="{{ global_speed_limit }}" min="1" max="100">
                 </div>
 
+                <div class="input-group">
+                    <label>Gaming Mode (Prioritize UDP)</label>
+                    <div class="toggle-wrapper">
+                        <label class="switch">
+                            <input type="checkbox" name="gaming_mode" {% if gaming_mode_enabled %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                        <span>{% if gaming_mode_enabled %}Active{% else %}Off{% endif %}</span>
+                    </div>
+                </div>
+
             </div>
             <button type="submit" class="save-btn">Save Changes</button>
         </form>
