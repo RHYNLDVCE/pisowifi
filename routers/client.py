@@ -57,6 +57,29 @@ async def home(request: Request):
         "banner_url": utils.get_banner_image()
     })
 
+@router.post("/connect")
+async def start_internet(mac: str):
+    if state.users.get(mac) and state.users[mac]["time"] > 0:
+        state.users[mac]["status"] = "connected"
+        state.users[mac]["last_active"] = time.time()
+        
+        # --- PASS IP TO FIREWALL FOR SPEED LIMIT ---
+        user_ip = state.users[mac].get("ip")
+        firewall.allow_user(mac, user_ip)
+        
+        controller.turn_slot_off()
+        database.sync_user(mac, state.users[mac])
+        
+        if mac in state.manager.active_connections:
+            await state.manager.send_personal_message({
+                "type": "sync",
+                "status": "connected",
+                "time_remaining": state.users[mac]["time"]
+            }, mac)
+            
+        return {"result": "success"}
+    return {"result": "fail"}
+
 @router.get("/status")
 async def check_status(mac: str, request: Request):
     user = state.users.get(mac, {"time": 0, "status": "new"})

@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from core import database, state, security
 from core.templates import templates
-from network import firewall  # <-- Needed for the Block User button
+from network import firewall
 
 router = APIRouter()
 
@@ -36,7 +36,9 @@ async def admin_panel(request: Request, authorized: bool = Depends(security.is_a
         "total_sales": total,
         "slot_timeout": state.config.get("slot_timeout", 30),
         "inactive_timeout": state.config.get("inactive_timeout", 60),
-        "auto_pause_enabled": state.config.get("auto_pause_enabled", True) # <-- Pass status to UI
+        "auto_pause_enabled": state.config.get("auto_pause_enabled", True),
+        "speed_limit_enabled": state.config.get("speed_limit_enabled", False),
+        "global_speed_limit": state.config.get("global_speed_limit", 5)
     })
 
 @router.post("/admin/upload_banner")
@@ -49,14 +51,20 @@ async def upload_banner(file: UploadFile = File(...), authorized: bool = Depends
 async def update_settings(
     timeout: int = Form(...), 
     inactive_timeout: int = Form(...), 
-    auto_pause: str = Form(None), # <-- Receive Checkbox value (None if unchecked)
+    auto_pause: str = Form(None),
+    speed_limit_val: int = Form(...),
+    speed_limit_toggle: str = Form(None),
     authorized: bool = Depends(security.is_admin)
 ):
+    # Update Memory
     state.config["slot_timeout"] = timeout
     state.config["inactive_timeout"] = inactive_timeout
-    
-    # HTML Checkboxes send "on" if checked, or nothing (None) if unchecked
     state.config["auto_pause_enabled"] = (auto_pause == "on")
+    state.config["global_speed_limit"] = speed_limit_val
+    state.config["speed_limit_enabled"] = (speed_limit_toggle == "on")
+    
+    # SAVE TO FILE (The Fix)
+    state.save_config()
     
     return RedirectResponse(url="/admin", status_code=303)
 

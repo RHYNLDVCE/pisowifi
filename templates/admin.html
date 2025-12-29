@@ -68,6 +68,22 @@
                     </div>
                 </div>
 
+                <div class="input-group">
+                    <label>Internet Speed Limit</label>
+                    <div class="toggle-wrapper">
+                        <label class="switch">
+                            <input type="checkbox" name="speed_limit_toggle" {% if speed_limit_enabled %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                        <span>{% if speed_limit_enabled %}Enabled{% else %}Disabled{% endif %}</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Max Speed (Mbps)</label>
+                    <input type="number" name="speed_limit_val" value="{{ global_speed_limit }}" min="1" max="100">
+                </div>
+
             </div>
             <button type="submit" class="save-btn">Save Changes</button>
         </form>
