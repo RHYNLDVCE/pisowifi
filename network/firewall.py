@@ -23,7 +23,6 @@ def init_firewall():
         "iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT",
         
         # 4. DNS TRAP (The Fix): Force ALL DNS to Orange Pi (10.0.0.1)
-        # Even if user sets DNS to 8.8.8.8, we force it to us so we can spoof the portal
         f"iptables -t nat -A PREROUTING -i {config.LAN_INTERFACE} -p udp --dport 53 -j DNAT --to-destination 10.0.0.1:53",
         f"iptables -t nat -A PREROUTING -i {config.LAN_INTERFACE} -p tcp --dport 53 -j DNAT --to-destination 10.0.0.1:53",
 
@@ -41,7 +40,6 @@ def block_user(mac):
     print(f"Blocking User: {mac}")
     
     # 1. Remove Access Rules (Loop until all instances are gone)
-    # We remove the rules that allowed them to bypass the Trap
     cmd_fwd = f"iptables -D FORWARD -m mac --mac-source {mac} -j ACCEPT"
     while subprocess.call(cmd_fwd.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0: pass
     
@@ -52,11 +50,13 @@ def block_user(mac):
     try:
         # Find IP from ARP table (MAC -> IP)
         ip_cmd = f"arp -n | grep {mac} | awk '{{print $1}}'"
-        user_ip = subprocess.check_output(ip_cmd, shell=True).decode().strip()
+        try:
+            user_ip = subprocess.check_output(ip_cmd, shell=True).decode().strip()
+        except:
+            user_ip = ""
         
         if user_ip and CONNTRACK_PATH:
             print(f"Cutting connections for {user_ip}...")
-            # -D deletes the connection state, forcing the device to reconnect (and hit the firewall)
             subprocess.run([CONNTRACK_PATH, "-D", "-s", user_ip], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             subprocess.run([CONNTRACK_PATH, "-D", "-d", user_ip], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception as e:
@@ -68,9 +68,33 @@ def allow_user(mac):
     
     print(f"Allowing User: {mac}")
     # 1. Insert ACCEPT at the TOP (-I 1) of PREROUTING
-    # This bypasses the DNS Trap and HTTP Trap logic below it
     subprocess.run(f"iptables -t nat -I PREROUTING 1 -m mac --mac-source {mac} -j ACCEPT".split())
     
     # 2. Insert ACCEPT at the TOP (-I 1) of FORWARD
-    # This bypasses the default DROP policy
     subprocess.run(f"iptables -I FORWARD 1 -m mac --mac-source {mac} -j ACCEPT".split())
+
+# --- NEW FUNCTION FOR SMART AUTO-PAUSE ---
+def get_user_bytes(mac: str) -> int:
+    """
+    Reads the data usage (in bytes) for a specific MAC address from iptables.
+    Returns 0 if no rule found.
+    """
+    try:
+        # List rules with exact byte counts (-x)
+        res = subprocess.check_output(
+            ["iptables", "-L", "FORWARD", "-v", "-n", "-x"], 
+            text=True
+        )
+        
+        for line in res.splitlines():
+            # Find the rule corresponding to this MAC in the ACCEPT chain
+            if mac.upper() in line.upper() and "ACCEPT" in line:
+                parts = line.split()
+                # IPTables output format: [pkts, bytes, target, prot, opt, in, out, source, dest]
+                # The second column (index 1) is Bytes
+                if len(parts) >= 2 and parts[1].isdigit():
+                    return int(parts[1])
+    except Exception as e:
+        print(f"Firewall Read Error: {e}")
+        
+    return 0
