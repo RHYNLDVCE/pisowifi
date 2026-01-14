@@ -1,0 +1,318 @@
+<div id="portal" class="section">
+    <h2>Portal Configuration</h2>
+
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <div>
+                <h3 style="margin:0;">🖼️ Banner Gallery</h3>
+                <p style="margin:5px 0 0; color:#6b7280; font-size:0.9rem;">
+                    Arrange images to set their display order.
+                </p>
+            </div>
+            <button class="btn btn-primary" type="button" style="width:auto;" onclick="saveBannerOrder()">💾 Save Layout</button>
+        </div>
+
+        <div id="bannerGrid" class="banner-grid">
+            {% if banner_files %}
+                {% for banner in banner_files %}
+                <div class="banner-item" data-filename="{{ banner }}">
+                    <div class="banner-img-wrapper">
+                        <img src="/static/banners/{{ banner }}" alt="Banner">
+                    </div>
+                    <div class="banner-actions">
+                        <button type="button" class="btn-icon" onclick="moveBanner(this, -1)" title="Move Left">◀</button>
+                        <button type="button" class="btn-icon delete" onclick="deleteBanner('{{ banner }}', this)" title="Delete">🗑</button>
+                        <button type="button" class="btn-icon" onclick="moveBanner(this, 1)" title="Move Right">▶</button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: #9ca3af; background: #f9fafb; border-radius: 8px;">
+                    No banners uploaded yet.
+                </div>
+            {% endif %}
+        </div>
+
+        <form action="/admin/upload_banners" method="post" enctype="multipart/form-data" id="uploadForm">
+            <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+                <input type="file" name="files" id="fileInput" multiple accept="image/*" hidden onchange="this.form.submit()">
+                <div style="font-size: 2rem; margin-bottom: 10px;">☁️</div>
+                <div>
+                    <strong>Click to upload</strong> or drag images here<br>
+                    <small style="color:#9ca3af;">Supports JPG, PNG, GIF</small>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+            <div>
+                <h3 style="margin:0;">🔊 Sound Library</h3>
+                <p style="margin:5px 0 0; color:#6b7280; font-size:0.9rem;">
+                    Upload custom MP3 files for system events.
+                </p>
+            </div>
+        </div>
+
+        <div style="background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px dashed #d1d5db;">
+            <form action="/admin/upload_sound" method="post" enctype="multipart/form-data" style="display: flex; gap: 10px; align-items: center;">
+                <input type="file" name="file" accept=".mp3,.wav" required style="flex: 1; padding: 10px; background: white; border: 1px solid #d1d5db; border-radius: 8px;">
+                <button type="submit" class="btn btn-success" style="width: auto; padding: 10px 20px;">Upload MP3</button>
+            </form>
+        </div>
+    </div>
+
+    <form action="/admin/update_settings" method="post" id="settingsForm">
+        
+        <div class="card">
+            <h3>🪙 Coin Rates Configuration</h3>
+            <p style="color:#6b7280; font-size:0.9rem; margin-top:-10px; margin-bottom:25px;">
+                Define how many minutes of internet access each coin denomination provides.
+            </p>
+            
+            <div class="coin-grid">
+                <div class="coin-card">
+                    <div class="coin-icon">₱1</div>
+                    <div class="coin-details">
+                        <span class="coin-label">1 Peso</span>
+                        <div class="coin-input-group">
+                            <input type="number" id="rate_1" class="coin-input" placeholder="0" min="0" oninput="syncCoinRates()">
+                            <span class="unit">mins</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="coin-card">
+                    <div class="coin-icon five">₱5</div>
+                    <div class="coin-details">
+                        <span class="coin-label">5 Pesos</span>
+                        <div class="coin-input-group">
+                            <input type="number" id="rate_5" class="coin-input" placeholder="0" min="0" oninput="syncCoinRates()">
+                            <span class="unit">mins</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="coin-card">
+                    <div class="coin-icon ten">₱10</div>
+                    <div class="coin-details">
+                        <span class="coin-label">10 Pesos</span>
+                        <div class="coin-input-group">
+                            <input type="number" id="rate_10" class="coin-input" placeholder="0" min="0" oninput="syncCoinRates()">
+                            <span class="unit">mins</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="coin-card">
+                    <div class="coin-icon twenty">₱20</div>
+                    <div class="coin-details">
+                        <span class="coin-label">20 Pesos</span>
+                        <div class="coin-input-group">
+                            <input type="number" id="rate_20" class="coin-input" placeholder="0" min="0" oninput="syncCoinRates()">
+                            <span class="unit">mins</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <input type="hidden" name="coin_rates" id="coin_rates_hidden" value="{{ coin_rates }}">
+        </div>
+
+        <div class="card">
+            <h3>🎛️ Sound Effects</h3>
+            <p style="color:#6b7280; font-size:0.9rem; margin-top:-10px; margin-bottom:20px;">
+                Choose which sounds play during user interaction.
+            </p>
+            <div class="settings-grid">
+                <div class="input-group">
+                    <label>Insert Coin (Looping)</label>
+                    <select name="sound_insert" style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; background:white;">
+                        {% for s in sound_files %}
+                        <option value="{{ s }}" {% if s == sound_insert_selected %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                    <p style="color:#6b7280; font-size:0.8rem; margin-top:5px;">Plays repeatedly while the insert coin modal is open.</p>
+                </div>
+
+                <div class="input-group">
+                    <label>Coin Received (Success)</label>
+                    <select name="sound_coin" style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; background:white;">
+                        {% for s in sound_files %}
+                        <option value="{{ s }}" {% if s == sound_coin_selected %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                    <p style="color:#6b7280; font-size:0.8rem; margin-top:5px;">Plays immediately when a coin is detected.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🎨 Interface Settings</h3>
+            <div class="settings-grid">
+                <div class="input-group">
+                    <label>Banner Button Text</label>
+                    <input type="text" name="banner_text" value="{{ banner_text }}" placeholder="e.g. Open App">
+                </div>
+                <div class="input-group">
+                    <label>Banner Button URL</label>
+                    <input type="text" name="banner_link" value="{{ banner_link }}" placeholder="http://...">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>⏱️ Timer Automation</h3>
+            <div class="settings-grid">
+                <div class="input-group">
+                    <label>Coin Insert Timeout (sec)</label>
+                    <input type="number" name="timeout" value="{{ slot_timeout }}">
+                </div>
+            </div>
+        </div>
+
+        <input type="hidden" name="speed_limit_val" value="{{ global_speed_limit }}">
+        <input type="hidden" name="speed_limit_toggle" {% if speed_limit_enabled %}value="on"{% endif %}>
+        <input type="hidden" name="gaming_mode" {% if gaming_mode_enabled %}value="on"{% endif %}>
+        <input type="hidden" name="inactive_timeout" value="{{ inactive_timeout }}">
+        <input type="hidden" name="auto_pause" {% if auto_pause_enabled %}value="on"{% endif %}>
+        <input type="hidden" name="free_time_duration" value="{{ free_time_duration }}">
+        <input type="hidden" name="free_time_toggle" {% if free_time_enabled %}value="on"{% endif %}>
+
+        <button type="submit" class="btn btn-primary">Save Portal Settings</button>
+    </form>
+</div>
+
+<style>
+    /* --- COIN CARD STYLES --- */
+    .coin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .coin-card {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: transform 0.2s;
+    }
+    .coin-card:hover { transform: translateY(-2px); border-color: #d1d5db; }
+
+    .coin-icon {
+        width: 50px; height: 50px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.1rem;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        border: 2px solid #fff;
+    }
+    .coin-icon.five { background: #fbbf24; color: #92400e; }
+    .coin-icon.ten { background: #e5e7eb; color: #1f2937; border: 3px dashed #9ca3af; }
+    .coin-icon.twenty { background: #fbbf24; color: #92400e; border: 3px double #d97706; }
+
+    .coin-details { flex: 1; }
+    .coin-label { display: block; font-size: 0.8rem; color: #6b7280; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
+    
+    .coin-input-group { display: flex; align-items: center; background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 0 10px; }
+    .coin-input { border: none !important; box-shadow: none !important; padding: 10px 0 !important; font-size: 1.1rem !important; font-weight: bold; color: #111827; }
+    .coin-input:focus { outline: none; }
+    .unit { color: #9ca3af; font-size: 0.85rem; font-weight: 600; margin-left: 5px; }
+
+    /* --- BANNER STYLES (Kept from previous) --- */
+    .banner-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .banner-item { background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
+    .banner-item:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .banner-img-wrapper { width: 100%; aspect-ratio: 16/9; background: #f3f4f6; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .banner-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+    .banner-actions { display: flex; border-top: 1px solid #e5e7eb; }
+    .btn-icon { flex: 1; border: none; background: white; padding: 8px 0; cursor: pointer; font-size: 0.9rem; transition: background 0.1s; color: #4b5563; }
+    .btn-icon:hover { background: #f9fafb; color: #111827; }
+    .btn-icon:first-child { border-right: 1px solid #e5e7eb; }
+    .btn-icon:last-child { border-left: 1px solid #e5e7eb; }
+    .btn-icon.delete { color: #ef4444; }
+    .btn-icon.delete:hover { background: #fee2e2; }
+    .upload-zone { border: 2px dashed #d1d5db; border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; background: #f9fafb; transition: all 0.2s; }
+    .upload-zone:hover { border-color: #6366f1; background: #eef2ff; }
+</style>
+
+<script>
+    // --- COIN RATES LOGIC ---
+    function initCoinRates() {
+        const rateStr = document.getElementById('coin_rates_hidden').value;
+        if (!rateStr) return;
+
+        const parts = rateStr.split(',');
+        parts.forEach(part => {
+            const [coin, mins] = part.split(':');
+            const input = document.getElementById('rate_' + coin);
+            if (input) {
+                input.value = mins;
+            }
+        });
+    }
+
+    function syncCoinRates() {
+        const coins = [1, 5, 10, 20];
+        let parts = [];
+
+        coins.forEach(c => {
+            const val = document.getElementById('rate_' + c).value;
+            if (val && parseInt(val) > 0) {
+                parts.push(c + ':' + parseInt(val));
+            }
+        });
+
+        document.getElementById('coin_rates_hidden').value = parts.join(',');
+    }
+
+    // --- BANNER LOGIC ---
+    function moveBanner(btn, direction) {
+        const item = btn.closest('.banner-item');
+        const parent = item.parentNode;
+        if (direction === -1) {
+            const prev = item.previousElementSibling;
+            if (prev) parent.insertBefore(item, prev);
+        } else {
+            const next = item.nextElementSibling;
+            if (next) parent.insertBefore(next, item);
+        }
+    }
+
+    function saveBannerOrder() {
+        const items = document.querySelectorAll('.banner-item');
+        const filenames = Array.from(items).map(el => el.getAttribute('data-filename'));
+        const formData = new FormData();
+        formData.append('order', JSON.stringify(filenames));
+
+        fetch('/admin/save_banner_order', { method: 'POST', body: formData })
+        .then(response => {
+            if(response.ok) alert('✅ Banner order saved!');
+            else alert('❌ Failed to save order.');
+        });
+    }
+
+    function deleteBanner(filename, btn) {
+        if(!confirm('Are you sure you want to delete this banner?')) return;
+        const formData = new FormData();
+        formData.append('filename', filename);
+
+        fetch('/admin/delete_banner', { method: 'POST', body: formData })
+        .then(response => {
+            if(response.ok) btn.closest('.banner-item').remove();
+            else alert('Error deleting file.');
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", initCoinRates);
+</script>

@@ -1,0 +1,222 @@
+<style>
+    /* --- UNIFIED FORM STYLES --- */
+    .input-group input, 
+    .toggle-wrapper {
+        height: 48px; /* Fixed identical height */
+        width: 100%;
+        border: 1px solid #d1d5db; 
+        border-radius: 8px; 
+        box-sizing: border-box; 
+        font-size: 1rem;
+        background: #ffffff;
+    }
+
+    /* Text Input Specifics */
+    .input-group input {
+        padding: 0 15px;
+        color: #1f2937;
+    }
+
+    /* Toggle Container Specifics */
+    .toggle-wrapper {
+        display: flex;
+        align-items: center; /* Critical for vertical centering */
+        justify-content: space-between; 
+        padding: 0 15px;
+        background: #f9fafb;
+    }
+
+    /* Toggle Status Text */
+    .toggle-status {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #4b5563;
+        line-height: 1; /* Prevents text line-height from offsetting alignment */
+    }
+
+    /* Switch Label */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+        margin: 0; /* Removes any browser default margins */
+        flex-shrink: 0;
+        vertical-align: middle; /* fallback */
+    }
+
+    /* Hide Checkbox completely from layout flow */
+    .switch input { 
+        position: absolute; 
+        opacity: 0; 
+        width: 0; 
+        height: 0; 
+        margin: 0;
+    }
+
+    /* The Slider Track */
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #cbd5e1;
+        transition: .3s;
+        border-radius: 34px;
+    }
+
+    /* The Slider Circle */
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px; /* (24px height - 18px circle) / 2 = 3px spacing for perfect center */
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    input:checked + .slider { background-color: #4f46e5; }
+    input:checked + .slider:before { transform: translateX(20px); }
+</style>
+
+<div id="features" class="section">
+    <h2>Network Features</h2>
+    <form action="/admin/update_settings" method="post">
+        
+        <div class="card">
+            <h3>🎁 Free Time Offer</h3>
+            <div class="settings-grid">
+                <div class="input-group">
+                    <label>Enable Free Trial</label>
+                    <div class="toggle-wrapper">
+                        <label class="switch">
+                            <input type="checkbox" id="free_toggle" name="free_time_toggle" 
+                                   {% if free_time_enabled %}checked{% endif %} 
+                                   onchange="toggleFreeInput()">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="free_status" class="toggle-status">
+                            {% if free_time_enabled %}Enabled{% else %}Disabled{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Duration (Minutes)</label>
+                    <input type="number" id="free_input" name="free_time_duration" value="{{ free_time_duration }}"
+                           {% if not free_time_enabled %}readonly style="background-color: #f3f4f6; color: #9ca3af; cursor: not-allowed;"{% endif %}>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🚀 Speed Limiter</h3>
+            <div class="settings-grid">
+                <div class="input-group">
+                    <label>Global Limiter</label>
+                    <div class="toggle-wrapper">
+                        <label class="switch">
+                            <input type="checkbox" id="speed_toggle" name="speed_limit_toggle" 
+                                   {% if speed_limit_enabled %}checked{% endif %} 
+                                   onchange="toggleSpeedInput()">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="speed_status" class="toggle-status">
+                            {% if speed_limit_enabled %}Enabled{% else %}Disabled{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Max Speed (Mbps)</label>
+                    <input type="number" id="speed_input" name="speed_limit_val" value="{{ global_speed_limit }}"
+                           {% if not speed_limit_enabled %}readonly style="background-color: #f3f4f6; color: #9ca3af; cursor: not-allowed;"{% endif %}>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>⏸️ Auto Pause System</h3>
+            <div class="settings-grid">
+                <div class="input-group">
+                    <label>Auto Pause Inactive Users</label>
+                    <div class="toggle-wrapper">
+                        <label class="switch">
+                            <input type="checkbox" id="pause_toggle" name="auto_pause" 
+                                   {% if auto_pause_enabled %}checked{% endif %} 
+                                   onchange="togglePauseInput()">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="pause_status" class="toggle-status">
+                            {% if auto_pause_enabled %}Enabled{% else %}Disabled{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Inactive Timeout (Seconds)</label>
+                    <input type="number" id="pause_input" name="inactive_timeout" value="{{ inactive_timeout }}"
+                           {% if not auto_pause_enabled %}readonly style="background-color: #f3f4f6; color: #9ca3af; cursor: not-allowed;"{% endif %}>
+                    <p style="color:#6b7280; font-size:0.8rem; margin-top:5px;">Time before an idle user is paused.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🎮 Gaming Mode</h3>
+            <div class="toggle-wrapper" style="width: auto; display: inline-flex; gap: 15px; padding: 0 20px;">
+                <label class="switch">
+                    <input type="checkbox" name="gaming_mode" {% if gaming_mode_enabled %}checked{% endif %}>
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-status">
+                    {% if gaming_mode_enabled %}Enabled{% else %}Disabled{% endif %}
+                </span>
+            </div>
+            <p style="color:#6b7280; font-size:0.9rem; margin-top:10px;">Prioritizes UDP traffic for gaming.</p>
+        </div>
+
+        <input type="hidden" name="banner_text" value="{{ banner_text }}">
+        <input type="hidden" name="banner_link" value="{{ banner_link }}">
+        <input type="hidden" name="coin_rates" value="{{ coin_rates }}">
+        <input type="hidden" name="timeout" value="{{ slot_timeout }}">
+
+        <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Save Network Settings</button>
+    </form>
+</div>
+
+<script>
+    function toggleState(checkboxId, inputId, statusId) {
+        var checkbox = document.getElementById(checkboxId);
+        var input = document.getElementById(inputId);
+        var status = document.getElementById(statusId);
+
+        if (checkbox.checked) {
+            if(input) {
+                input.readOnly = false;
+                input.style.backgroundColor = '#ffffff'; 
+                input.style.color = '#1f2937';
+                input.style.cursor = 'text';
+            }
+            if(status) {
+                status.innerText = 'Enabled';
+                status.style.color = '#4f46e5';
+            }
+        } else {
+            if(input) {
+                input.readOnly = true;
+                input.style.backgroundColor = '#f3f4f6'; 
+                input.style.color = '#9ca3af'; 
+                input.style.cursor = 'not-allowed';
+            }
+            if(status) {
+                status.innerText = 'Disabled';
+                status.style.color = '#6b7280';
+            }
+        }
+    }
+
+    function toggleSpeedInput() { toggleState('speed_toggle', 'speed_input', 'speed_status'); }
+    function togglePauseInput() { toggleState('pause_toggle', 'pause_input', 'pause_status'); }
+    function toggleFreeInput() { toggleState('free_toggle', 'free_input', 'free_status'); }
+</script>

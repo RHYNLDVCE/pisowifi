@@ -1,0 +1,20 @@
+{
+    "slot_timeout": 40,
+    "slot_expiry_timestamp": 1768386095.1896434,
+    "inactive_timeout": 300,
+    "auto_pause_enabled": true,
+    "speed_limit_enabled": true,
+    "global_speed_limit": 10,
+    "gaming_mode_enabled": true,
+    "inactive_packet_threshold": 5,
+    "coin_rates": "1:12,5:70,10:181,20:481",
+    "pulse_value": 5,
+    "inactive_bytes_threshold": 500,
+    "banner_text": "Open JellyFin",
+    "banner_link": "http://192.168.0.166:8096",
+    "banner_order": [],
+    "free_time_enabled": false,
+    "free_time_duration": 300,
+    "sound_insert": "insert_coin_sound.mp3",
+    "sound_coin": "coin-recieved.mp3"
+}

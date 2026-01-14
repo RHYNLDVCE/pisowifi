@@ -1,0 +1,707 @@
+{% extends "base.html" %}
+
+{% block title %}REYES Starlink PisoWifi{% endblock %}
+
+{% block styles %}
+<style>
+    :root {
+        --primary: #6366f1;
+        --primary-dark: #4f46e5;
+        --accent: #8b5cf6;
+        --bg-color: #f8fafc;
+        --card-bg: #ffffff;
+        --text-main: #1e293b;
+        --text-sub: #64748b;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    body { 
+        background-color: var(--bg-color); 
+        color: var(--text-main); 
+        min-height: 100vh; 
+        display: flex; 
+        flex-direction: column;
+        align-items: center;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .main-wrapper { 
+        width: 100%; 
+        max-width: 480px; 
+        min-height: 100vh;
+        display: flex; 
+        flex-direction: column; 
+        background: var(--bg-color);
+        position: relative;
+    }
+
+    /* HEADER & CAROUSEL */
+    .header {
+        position: relative;
+        height: 280px; 
+        overflow: hidden;
+        border-bottom-left-radius: 15px;
+        border-bottom-right-radius: 15px;
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+        background: #333; 
+    }
+
+    /* Images */
+    .carousel-slide {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        object-fit: cover;
+        opacity: 0;
+        transition: opacity 1s ease-in-out;
+        z-index: 0;
+    }
+    .carousel-slide.active { opacity: 1; }
+
+    /* Overlay Content */
+    .header-content {
+        position: absolute;
+        bottom: 0; left: 0; width: 100%;
+        padding: 40px 20px 35px; 
+        background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 60%, transparent 100%);
+        z-index: 10;
+        text-align: center;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px; 
+    }
+
+    .header-content h2 { margin: 0; font-weight: 800; font-size: 1.8rem; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+    .header-content p { margin: 0; opacity: 0.95; font-size: 0.95rem; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+
+    /* STATUS BADGE */
+    .status-badge { 
+        display: inline-flex; 
+        align-items: center; 
+        gap: 6px;
+        background: rgba(255,255,255,0.2); 
+        backdrop-filter: blur(5px);
+        padding: 6px 16px; 
+        border-radius: 99px; 
+        font-size: 0.75rem; 
+        font-weight: 700; 
+        margin-top: 0;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 5px rgba(255,255,255,0.8); }
+
+    /* TIMER CARD */
+    .timer-card { 
+        background: var(--card-bg); 
+        margin: -20px 20px 0; 
+        padding: 25px 20px; 
+        border-radius: 12px; 
+        box-shadow: var(--shadow); 
+        text-align: center; 
+        position: relative; 
+        z-index: 20; 
+    }
+    .timer-label { color: var(--text-sub); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    .timer-display { font-size: 3.8rem; font-weight: 800; margin: 5px 0; line-height: 1; color: var(--text-main); font-variant-numeric: tabular-nums; }
+    
+    .conn-status { font-size: 0.9rem; color: var(--text-sub); margin-bottom: 15px; font-weight: 500; }
+
+    /* INFO ROWS */
+    .info-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #f1f5f9; }
+    .info-row { display: flex; justify-content: center; gap: 15px; font-size: 0.75rem; color: var(--text-sub); font-family: monospace; margin-bottom: 4px; }
+
+    /* ACTION BUTTONS */
+    .actions { padding: 30px 20px; display: flex; flex-direction: column; gap: 12px; flex-grow: 1; width: 100%; }
+    
+    .btn { border: none; width: 100%; padding: 16px; border-radius: 8px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .btn:active { transform: scale(0.98); }
+    .btn-main { background: var(--text-main); color: white; }
+    .btn-insert { background: var(--success); color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
+    .btn-resume { background: var(--warning); color: white; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+    .btn-pause { background: var(--danger); color: white; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); }
+    .btn-outline { background: white; border: 2px solid #e2e8f0; color: var(--text-sub); box-shadow: none; font-size: 0.95rem; }
+    .btn-disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; box-shadow: none; }
+
+    /* MODAL */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
+    .modal-card { background: white; width: 90%; max-width: 340px; border-radius: 12px; padding: 30px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    
+    .pulse-animation { animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+    .coin-circle { width: 80px; height: 80px; background: #fef3c7; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: #d97706; border: 4px solid white; box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.2); }
+    .progress-track { width: 100%; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; margin: 20px 0; }
+    .progress-fill { height: 100%; background: var(--primary); width: 100%; transition: width 1s linear; }
+    
+    /* Stats Box */
+    .stats-box { background: #f8fafc; border-radius: 6px; padding: 0; margin-bottom: 20px; border: 1px solid #e2e8f0; text-align: left; }
+    .stat-row { padding: 15px; display: flex; align-items: center; gap: 10px; color: var(--text-main); font-size: 1.1rem; }
+    .stat-row.border-bottom { border-bottom: 1px solid #e2e8f0; }
+    .stat-value { font-weight: 700; margin-left: auto; }
+
+    /* TOAST */
+    .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+    .toast { background: rgba(30, 41, 59, 0.95); color: white; padding: 14px 24px; border-radius: 50px; font-size: 0.95rem; font-weight: 500; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2); display: flex; align-items: center; gap: 10px; animation: toastSlideUp 0.3s; min-width: 280px; justify-content: center; backdrop-filter: blur(4px); }
+    .toast.error { background: rgba(220, 38, 38, 0.95); }
+    .toast.success { background: rgba(5, 150, 105, 0.95); }
+    @keyframes toastSlideUp { from { transform: translateY(40px) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-wrapper">
+    <div id="appHeader" class="header">
+        
+        <div id="bannerWrapper">
+            {% for banner in banners %}
+                <img src="{{ banner }}" class="carousel-slide {% if loop.first %}active{% endif %}">
+            {% endfor %}
+        </div>
+
+        <div class="header-content">
+            <h2>REYES Starlink</h2>
+            <p>Premium Internet Connectivity</p>
+            
+            <div id="statusBadgeContainer" class="status-badge">
+                <span class="dot"></span> <span id="statusBadge">CONNECTING...</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="timer-card">
+        <div class="timer-label">Time Remaining</div>
+        <div id="timeDisplay" class="timer-display">--:--</div>
+        <div id="connectionStatus" class="conn-status">Checking Status...</div>
+        
+        <div class="info-section">
+            <div class="info-row">
+                <span>Coin Balance: <b id="balanceDisplay">0</b></span>
+            </div>
+            <div class="info-row">
+                <span>IP: <b id="ipDisplay">...</b></span>
+                <span>MAC: <b id="macDisplay">...</b></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="actions">
+        <button id="btnInsert" class="btn btn-insert" onclick="activateSlot()">
+            Insert Coin
+        </button>
+
+        <button id="btnAction" class="btn btn-disabled" disabled onclick="connectInternet()">
+            RESUME TIME
+        </button>
+
+        <button class="btn btn-outline" onclick="openRatesModal()">
+            View Rates
+        </button>
+
+        {% if free_time_enabled and not free_claimed %}
+        <button id="btnFree" class="btn" style="background: #8b5cf6; color: white; margin-top: 5px;" onclick="claimFreeTime()">
+            {% if free_duration >= 60 %}
+                {% set f_hours = (free_duration // 60) %}
+                {% set f_mins = (free_duration % 60) %}
+                🎁 Claim Free {{ "%d:%02d"|format(f_hours, f_mins) }} Hours
+            {% else %}
+                🎁 Claim Free {{ free_duration }} Mins
+            {% endif %}
+        </button>
+        {% endif %}
+
+        {% if banner_text %}
+        <div style="text-align: center; margin-top: 15px;">
+            <a href="{{ banner_link }}" target="_blank" style="color: var(--text-sub); text-decoration: none; font-size: 0.95rem; font-weight: 500; border-bottom: 1px dotted var(--text-sub);">
+                {{ banner_text }}
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div id="coinModal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="coin-circle pulse-animation">🪙</div>
+        <h3 style="margin: 0 0 5px;">Insert Coins Now</h3>
+        <p style="margin: 0; color: var(--text-sub); font-size: 0.9rem;">Slot closes in <b id="slotSeconds" style="color:var(--primary);">--</b>s</p>
+        
+        <div class="progress-track">
+            <div id="slotProgressBar" class="progress-fill"></div>
+        </div>
+
+        <div class="stats-box">
+            <div class="stat-row border-bottom">
+                <span class="stat-label">Time:</span>
+                <span id="modalTimeVal" class="stat-value">0s</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Total Amount:</span>
+                <span id="modalAmountVal" class="stat-value">00</span>
+            </div>
+        </div>
+
+        <button id="btnModalAction" class="btn btn-danger" onclick="handleModalAction()">CANCEL</button>
+    </div>
+</div>
+
+<div id="ratesModal" class="modal-overlay">
+    <div class="modal-card">
+        <h3 style="margin-bottom: 20px;">Rates</h3>
+        <div id="ratesList" class="stats-box" style="padding: 0; overflow: hidden;">
+            </div>
+        <button class="btn btn-main" onclick="document.getElementById('ratesModal').style.display='none'">Close</button>
+    </div>
+</div>
+
+<div id="confirmModal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="coin-circle" style="background:#e0e7ff; color:#4f46e5; border-color:white; box-shadow:0 10px 15px -3px rgba(79, 70, 229, 0.2);">🎁</div>
+        <h3 style="margin: 0 0 10px;">Claim Free Time?</h3>
+        <p style="margin-bottom: 25px; color: var(--text-sub); font-size: 0.9rem;">
+            You are about to activate your free trial. <br>Do you want to proceed?
+        </p>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-outline" style="flex:1;" onclick="closeConfirmModal()">Cancel</button>
+            <button class="btn btn-main" style="flex:1;" onclick="proceedClaim()">Yes, Claim</button>
+        </div>
+    </div>
+</div>
+
+<div id="successModal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="coin-circle" style="background:#d1fae5; color:#059669; border-color:white; box-shadow:0 10px 15px -3px rgba(5, 150, 105, 0.2);">🎉</div>
+        <h3 style="margin: 0 0 10px;">Congratulations!</h3>
+        <p style="margin-bottom: 25px; color: var(--text-sub);">
+            You have successfully claimed your free time.
+        </p>
+        <button class="btn btn-main" onclick="closeSuccessModal()">Start Browsing</button>
+    </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    var mac = "{{ mac }}";
+    var ratesStr = "{{ coin_rates }}"; 
+    
+    // --- UI SETUP ---
+    var badChar = String.fromCharCode(123);
+    if (!mac || mac.startsWith("None") || mac.startsWith(badChar)) mac = "Unknown";
+    document.getElementById("macDisplay").innerText = mac;
+    document.getElementById("ipDisplay").innerText = "{{ ip }}";
+
+    // --- SOUND SYSTEM ---
+    var audioInsert = new Audio("{{ sound_insert_url }}");
+    audioInsert.loop = true; // Loop background sound
+    
+    var audioCoin = new Audio("{{ sound_coin_url }}");
+
+    // --- CAROUSEL LOGIC ---
+    const slides = document.querySelectorAll('.carousel-slide');
+    let currentSlide = 0;
+    if (slides.length > 1) {
+        setInterval(() => {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }, 4000); 
+    }
+
+    // --- STATE ---
+    let isModalOpen = false;
+    let sessionAddedTime = 0;     
+    let localTime = 0;      
+    let slotTime = 0;
+    let slotMaxTime = 30; // Default fallback    
+    let currentStatus = "loading"; 
+    let ws = null;
+
+    // --- RESTORE FROM CACHE ---
+    const cachedTime = localStorage.getItem("piso_time_" + mac);
+    const cachedStatus = localStorage.getItem("piso_status_" + mac);
+
+    if (cachedTime && !isNaN(parseInt(cachedTime))) {
+        localTime = parseInt(cachedTime);
+        updateTimerDisplay(localTime);
+    }
+    if (cachedStatus) {
+        currentStatus = cachedStatus;
+        updateUI({ status: cachedStatus, time_remaining: localTime, is_busy: false, balance: 0 });
+    }
+
+    // --- WEBSOCKET ---
+    function connectWebSocket() {
+        if (mac === "Unknown") return;
+        var protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+        ws = new WebSocket(protocol + window.location.host + "/ws/" + mac);
+
+        ws.onopen = () => { console.log("WS Connected"); fetchStatus(); };
+        ws.onmessage = (event) => {
+            var data = JSON.parse(event.data);
+            if (data.type === "sync") {
+                localTime = data.time_remaining;
+                updateUI(data);
+            } else if (data.type === "slot_opened") {
+                localTime = data.time_remaining;
+                handleSlotLogic(data);
+                // Play Loop Sound
+                audioInsert.play().catch(e => console.log("Auto-play blocked:", e));
+            } else if (data.type === "coin_inserted") {
+                localTime = data.time_remaining;
+                handleSlotLogic(data);
+                // Play Coin Sound
+                audioCoin.currentTime = 0; 
+                audioCoin.play().catch(e => console.log("Audio Error:", e));
+            } else if (data.type === "slot_closed") {
+                if (isModalOpen) closeModal(false);
+            }
+        };
+        ws.onclose = () => { setTimeout(connectWebSocket, 3000); };
+    }
+
+    async function fetchStatus() {
+        try {
+            let res = await fetch(`/status?mac=${mac}`);
+            let data = await res.json();
+            localTime = data.time_remaining;
+            updateUI(data);
+            if (data.slot_seconds > 0) handleSlotLogic(data);
+        } catch(e) {}
+    }
+
+    // --- TIMER LOOP ---
+    setInterval(() => {
+        if (currentStatus === "connected" && localTime > 0) {
+            localTime--;
+            updateTimerDisplay(localTime);
+            if (localTime % 5 === 0) localStorage.setItem("piso_time_" + mac, localTime);
+        } else if (currentStatus !== "connected") {
+            updateTimerDisplay(localTime);
+        } else {
+            updateTimerDisplay(0);
+        }
+
+        if (isModalOpen && slotTime > 0) {
+            slotTime--;
+            document.getElementById("slotSeconds").innerText = slotTime;
+            const percentage = (slotTime / slotMaxTime) * 100;
+            document.getElementById("slotProgressBar").style.width = percentage + "%";
+        }
+    }, 1000);
+
+    // --- TOAST NOTIFICATION ---
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        const icon = type === 'error' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+        toast.innerHTML = `<span>${icon}</span> ${message}`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.transition = 'all 0.3s ease';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(20px)';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // --- MODAL & LOGIC ---
+    function handleSlotLogic(data) {
+        if (!isModalOpen) {
+            isModalOpen = true;
+            document.getElementById("coinModal").style.display = "flex";
+        }
+        slotTime = data.slot_seconds;
+        if(data.coin_rates) ratesStr = data.coin_rates;
+
+        if (data.slot_max_seconds) {
+            slotMaxTime = data.slot_max_seconds;
+        } else if (data.type === "slot_opened") {
+            slotMaxTime = data.slot_seconds;
+        }
+        
+        document.getElementById("slotSeconds").innerText = slotTime;
+        const percentage = (slotTime / slotMaxTime) * 100;
+        document.getElementById("slotProgressBar").style.width = percentage + "%";
+
+        let currentBalance = data.balance || 0;
+        sessionAddedTime = calculateTimeFromBalance(currentBalance); 
+
+        document.getElementById("modalTimeVal").innerText = formatHumanTime(sessionAddedTime * 60);
+        document.getElementById("modalAmountVal").innerText = parseFloat(currentBalance).toFixed(2);
+
+        const btn = document.getElementById("btnModalAction");
+        if (sessionAddedTime > 0) {
+            btn.innerText = "DONE & RESUME"; 
+            btn.className = "btn btn-resume pulse-animation"; 
+        } else {
+            btn.innerText = "CANCEL";
+            btn.className = "btn btn-disabled";
+            btn.style.background = "var(--danger)";
+            btn.style.color = "white";
+        }
+    }
+    
+    function calculateTimeFromBalance(balance) {
+        let rates = [];
+        try {
+            ratesStr.split(',').forEach(part => {
+                let [amt, mins] = part.split(':');
+                rates.push({amt: parseInt(amt), mins: parseInt(mins)});
+            });
+            rates.sort((a, b) => b.amt - a.amt);
+        } catch(e) { rates = [{amt:1, mins:5}]; }
+
+        let totalMins = 0;
+        let rem = parseInt(balance);
+
+        rates.forEach(r => {
+            if(r.amt > 0) {
+                let count = Math.floor(rem / r.amt);
+                if(count > 0) {
+                    totalMins += count * r.mins;
+                    rem = rem % r.amt;
+                }
+            }
+        });
+        if(rem > 0) totalMins += rem * 5; 
+        return totalMins;
+    }
+
+    function openRatesModal() {
+        let container = document.getElementById("ratesList");
+        container.innerHTML = "";
+        let rates = [];
+        try {
+            ratesStr.split(',').forEach(part => {
+                let [amt, mins] = part.split(':');
+                rates.push({amt: parseInt(amt), mins: parseInt(mins)});
+            });
+            rates.sort((a, b) => a.amt - b.amt);
+        } catch(e) { }
+
+        rates.forEach(r => {
+            let row = document.createElement("div");
+            row.className = "stat-row border-bottom";
+            row.style.fontSize = "0.95rem";
+            row.style.padding = "12px 15px";
+            row.innerHTML = `<span style="font-weight:700;">₱${r.amt}</span> <span class="stat-value" style="font-weight:400; color:var(--text-sub);">${formatHumanTime(r.mins * 60)}</span>`;
+            container.appendChild(row);
+        });
+        document.getElementById("ratesModal").style.display = "flex";
+    }
+
+    function closeModal(shouldTellServer) {
+        if (shouldTellServer) fetch(`/cancel_slot?mac=${mac}`, {method: "POST"});
+        document.getElementById("coinModal").style.display = "none";
+        isModalOpen = false;
+        sessionAddedTime = 0;
+        
+        // STOP AUDIO
+        audioInsert.pause();
+        audioInsert.currentTime = 0;
+    }
+
+    function handleModalAction() {
+        if (sessionAddedTime > 0) connectInternet(); 
+        closeModal(true);
+    }
+
+    // --- HANDLE BLOCKED STATUS ---
+    function activateSlot() {
+        fetch(`/enable_slot?mac=${mac}`).then(r => r.json()).then(d => {
+            if(d.result === "success") {
+                // Good to go
+            } else if (d.result === "blocked") {
+                showToast("Access Denied: You are BLOCKED. Contact Owner.", "error");
+            } else {
+                showToast("System Busy - Someone is inserting coins", "error");
+            }
+        });
+    }
+
+    // --- CORE CONNECTION WITH RELOAD FIX ---
+    function connectInternet() {
+        // UI Optimistic Update
+        currentStatus = "connected"; 
+        updateUI({ status: "connected", time_remaining: localTime, is_busy: false, balance: 0 });
+        document.getElementById("statusBadge").innerText = "OPENING PORTAL...";
+        document.getElementById("btnAction").innerText = "Resuming...";
+
+        fetch(`/connect?mac=${mac}`, {method:'POST'}).then(r => r.json()).then(d => {
+            if(d.result === "success") {
+                document.getElementById("connectionStatus").innerText = "Connection Established!";
+                
+                // --- FIX: DELAY AND RELOAD ---
+                showToast("Connected! Validating...", "success");
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+
+            } else if (d.result === "blocked") {
+                updateUI({ status: "paused", time_remaining: localTime, is_busy: false, balance: 0 }); 
+                showToast("Access Denied: You are BLOCKED. Contact Owner.", "error");
+            } else {
+                updateUI({ status: "paused", time_remaining: localTime, is_busy: false, balance: 0 }); 
+                showToast("Connection Failed. Try again.", "error");
+            }
+        }).catch(err => {
+            updateUI({ status: "paused", time_remaining: localTime, is_busy: false, balance: 0 });
+            showToast("Network Error: Try refreshing manually.", "error");
+        });
+    }
+
+    function pauseInternet() {
+        currentStatus = "paused";
+        updateUI({ status: "paused", time_remaining: localTime, is_busy: false, balance: 0 });
+        fetch(`/pause?mac=${mac}`, {method:'POST'}).then(r => r.json());
+    }
+
+    // --- NEW: CLAIM FREE TIME LOGIC (2-STEP MODAL) ---
+    function claimFreeTime() {
+        // Step 1: Open Confirmation Modal
+        document.getElementById('confirmModal').style.display = 'flex';
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').style.display = 'none';
+    }
+
+    function proceedClaim() {
+        // Step 2: Actually process the claim
+        closeConfirmModal(); // Close confirm modal
+        
+        const btn = document.getElementById("btnFree");
+        if(btn) {
+            btn.disabled = true;
+            btn.innerText = "Claiming...";
+        }
+
+        fetch(`/claim_free_time?mac=${mac}`, {method: 'POST'})
+        .then(r => r.json())
+        .then(d => {
+            if(d.result === "success") {
+                // Show Success Modal
+                document.getElementById('successModal').style.display = 'flex';
+                if(btn) btn.style.display = 'none'; 
+            } else if (d.result === "already_claimed") {
+                showToast("You have already claimed this offer.", "error");
+                if(btn) btn.style.display = 'none';
+            } else if (d.result === "disabled") {
+                showToast("Free trial is currently disabled.", "error");
+            } else {
+                showToast("Offer is currently unavailable.", "error");
+                if(btn) {
+                    btn.disabled = false;
+                    btn.innerText = "🎁 Claim Free Time";
+                }
+            }
+        });
+    }
+
+    function closeSuccessModal() {
+        document.getElementById('successModal').style.display = 'none';
+        window.location.reload(); // Reload to refresh connection state
+    }
+
+    // --- HELPER FUNCTIONS ---
+    function updateUI(data) {
+        currentStatus = data.status;
+        localStorage.setItem("piso_time_" + mac, data.time_remaining);
+        localStorage.setItem("piso_status_" + mac, data.status);
+        if(data.coin_rates) ratesStr = data.coin_rates;
+
+        let bal = data.balance !== undefined ? data.balance : 0;
+        document.getElementById("balanceDisplay").innerText = bal;
+
+        const btnInsert = document.getElementById("btnInsert");
+        const btnAction = document.getElementById("btnAction");
+        const statusBadge = document.getElementById("statusBadge");
+        const badgeContainer = document.getElementById("statusBadgeContainer");
+        const connStatus = document.getElementById("connectionStatus");
+
+        btnInsert.innerHTML = "Insert Coin"; 
+        btnInsert.className = "btn btn-insert";
+        btnInsert.disabled = false;
+
+        if (data.status === "connected") {
+            statusBadge.innerText = "ONLINE";
+            badgeContainer.style.background = "rgba(16, 185, 129, 0.2)";
+            connStatus.innerText = "Internet Active";
+            connStatus.style.color = "var(--success)";
+            
+            btnAction.innerText = "PAUSE TIME";
+            btnAction.className = "btn btn-pause";
+            btnAction.disabled = false;
+            btnAction.onclick = pauseInternet;
+
+        } else if (data.status === "paused" || (data.time_remaining > 0 || localTime > 0)) {
+            statusBadge.innerText = "PAUSED";
+            badgeContainer.style.background = "rgba(245, 158, 11, 0.2)";
+            connStatus.innerText = "Time Paused";
+            connStatus.style.color = "var(--warning)";
+            
+            btnAction.innerText = "RESUME TIME";
+            btnAction.className = "btn btn-resume";
+            btnAction.disabled = false;
+            btnAction.onclick = connectInternet;
+
+        } else if (data.is_busy && !isModalOpen) {
+            statusBadge.innerText = "BUSY";
+            badgeContainer.style.background = "rgba(239, 68, 68, 0.2)";
+            btnAction.innerText = "System Busy";
+            btnAction.className = "btn btn-disabled";
+            btnAction.disabled = true;
+            btnInsert.className = "btn btn-disabled";
+            btnInsert.disabled = true;
+        } else {
+            statusBadge.innerText = "DISCONNECTED";
+            badgeContainer.style.background = "rgba(255, 255, 255, 0.2)";
+            connStatus.innerText = "No Time Available";
+            connStatus.style.color = "var(--text-sub)";
+            
+            btnAction.innerText = "RESUME TIME";
+            btnAction.className = "btn btn-disabled";
+            btnAction.disabled = true;
+        }
+    }
+
+    function updateTimerDisplay(seconds) {
+        if (seconds < 0) seconds = 0;
+        let h = Math.floor(seconds / 3600);
+        let m = Math.floor((seconds % 3600) / 60);
+        let s = seconds % 60;
+        document.getElementById("timeDisplay").innerText = 
+            (h > 0 ? h + ":" : "") + (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+    }
+
+    function formatHumanTime(seconds) {
+        if (seconds === 0) return "0s";
+        let h = Math.floor(seconds / 3600);
+        let m = Math.floor((seconds % 3600) / 60);
+        let s = seconds % 60;
+        
+        let parts = [];
+        if (h > 0) parts.push(h + "h");
+        if (m > 0 || h > 0) parts.push(m + "m");
+        if (s > 0 || parts.length === 0) parts.push(s + "s");
+        
+        return parts.join(" ");
+    }
+
+    connectWebSocket();
+</script>
+{% endblock %}
