@@ -5,11 +5,13 @@ import time
 import json 
 import psutil 
 import socket 
+import subprocess
 from datetime import datetime, timedelta
 from typing import List
 from fastapi import APIRouter, Request, Form, UploadFile, File, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+import config
 from core import database, state, security
 from core.templates import templates
 from network import firewall
@@ -36,27 +38,41 @@ async def logout():
     response.delete_cookie("admin_token")
     return response
 
-# --- SYSTEM STATUS API ---
+# --- SYSTEM STATUS API (UPDATED FOR NETWORK SPEED) ---
 
 @router.get("/admin/system_stats")
 async def get_system_stats(authorized: bool = Depends(security.is_admin)):
-    """API endpoint to fetch real-time hardware metrics including Uptime and IPs."""
+    """API endpoint to fetch real-time hardware metrics including Network Speed."""
+    
     # 1. CPU Temp
     cpu_temp = "N/A"
     try:
-        temps = psutil.sensors_temperatures()
-        if 'cpu_thermal' in temps: 
-            cpu_temp = temps['cpu_thermal'][0].current
-        elif 'coretemp' in temps: 
-            cpu_temp = temps['coretemp'][0].current
-    except Exception:
-        pass
+        # Try finding Orange Pi specific thermal zone
+        with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+            cpu_temp = round(int(f.read()) / 1000, 1)
+    except:
+        # Fallback to psutil sensors
+        try:
+            temps = psutil.sensors_temperatures()
+            if 'cpu_thermal' in temps: 
+                cpu_temp = temps['cpu_thermal'][0].current
+            elif 'coretemp' in temps: 
+                cpu_temp = temps['coretemp'][0].current
+        except: pass
 
     # 2. Memory & Disk
     mem = psutil.virtual_memory()
     disk = psutil.disk_usage('/')
 
-    # 3. Uptime Calculation
+    # 3. Network Speed Calculation (WAN Interface)
+    # We send total bytes; Frontend JS calculates the speed difference.
+    net_stats = psutil.net_io_counters(pernic=True)
+    wan_stats = net_stats.get(config.WAN_INTERFACE)
+    
+    rx_bytes = wan_stats.bytes_recv if wan_stats else 0
+    tx_bytes = wan_stats.bytes_sent if wan_stats else 0
+
+    # 4. Uptime Calculation
     try:
         boot_time = psutil.boot_time()
         seconds = time.time() - boot_time
@@ -73,7 +89,7 @@ async def get_system_stats(authorized: bool = Depends(security.is_admin)):
     except:
         uptime_str = "Unknown"
 
-    # 4. IP Addresses (IPv4 only, skip loopback)
+    # 5. IP Addresses
     ip_list = []
     try:
         interfaces = psutil.net_if_addrs()
@@ -82,7 +98,7 @@ async def get_system_stats(authorized: bool = Depends(security.is_admin)):
                 if addr.family == socket.AF_INET and not iface_name.startswith("lo"):
                     ip_list.append(addr.address)
     except:
-        ip_list = ["Error fetching IPs"]
+        ip_list = ["Error"]
 
     return {
         "cpu": psutil.cpu_percent(interval=None),
@@ -93,7 +109,9 @@ async def get_system_stats(authorized: bool = Depends(security.is_admin)):
         "disk": disk.percent,
         "disk_free": round(disk.free / (1024**3), 2),
         "uptime": uptime_str,
-        "ips": " ".join(ip_list) 
+        "ips": " ".join(ip_list),
+        "wan_rx_total": rx_bytes, # <--- Used for Download Speed
+        "wan_tx_total": tx_bytes  # <--- Used for Upload Speed
     }
 
 # --- ADMIN PANEL ---
@@ -158,9 +176,8 @@ async def admin_panel(
     end_idx = start_idx + ITEMS_PER_PAGE
     paginated_users = dict(all_users[start_idx:end_idx])
 
-    # --- BANNERS LOGIC (Updated to static/banners/set) ---
+    # --- BANNERS LOGIC ---
     banner_files = []
-    # Updated path to point to the 'set' folder
     if os.path.exists("static/banners/set"):
         actual_files = os.listdir("static/banners/set")
         saved_order = state.config.get("banner_order", [])
@@ -205,7 +222,6 @@ async def admin_panel(
 
 @router.post("/admin/clear_banners")
 async def clear_banners(authorized: bool = Depends(security.is_admin)):
-    # Updated path
     folder = "static/banners/set"
     if os.path.exists(folder):
         for filename in os.listdir(folder):
@@ -222,7 +238,6 @@ async def clear_banners(authorized: bool = Depends(security.is_admin)):
 
 @router.post("/admin/upload_banners")
 async def upload_banners(files: List[UploadFile] = File(...), authorized: bool = Depends(security.is_admin)):
-    # Updated path to create and save to 'set' folder
     os.makedirs("static/banners/set", exist_ok=True)
     for file in files:
         if file.filename:
@@ -243,7 +258,6 @@ async def save_banner_order(order: str = Form(...), authorized: bool = Depends(s
 
 @router.post("/admin/delete_banner")
 async def delete_banner(filename: str = Form(...), authorized: bool = Depends(security.is_admin)):
-    # Updated path to delete from 'set' folder
     file_path = os.path.join("static/banners/set", filename)
     if os.path.exists(file_path):
         try: os.remove(file_path)
@@ -273,7 +287,6 @@ async def update_settings(
     sound_coin: str = Form("coin-recieved.mp3"),
     authorized: bool = Depends(security.is_admin)
 ):
-    # Free Time Logic: Reset claimed status if re-enabling
     new_free_enabled = (free_time_toggle == "on")
     old_free_enabled = state.config.get("free_time_enabled", False)
     if new_free_enabled and not old_free_enabled:
@@ -312,14 +325,14 @@ async def admin_manage_time(
             
             if state.users[mac]["time"] < 0: state.users[mac]["time"] = 0
             
-            # Status updates based on time
+            # Status updates
             if state.users[mac]["time"] == 0 and state.users[mac]["status"] == "connected":
                 state.users[mac]["status"] = "expired"
                 firewall.block_user(mac)
             
             if action == "add" and state.users[mac]["time"] > 0 and state.users[mac]["status"] == "expired":
                  state.users[mac]["status"] = "connected"
-                 firewall.allow_user(mac, state.users[mac])
+                 firewall.allow_user(mac, state.users[mac].get("ip"))
 
             database.sync_user(mac, state.users[mac])
         except ValueError:
@@ -348,3 +361,14 @@ async def admin_delete_user(mac: str = Form(...), authorized: bool = Depends(sec
         del state.users[mac]
         database.delete_user(mac)
     return RedirectResponse(url="/admin", status_code=303)
+
+
+@router.post("/admin/reboot")
+async def reboot_device(authorized: bool = Depends(security.is_admin)):
+    """Reboots the Orange Pi immediately."""
+    try:
+        # 'sudo' is usually not needed if running as root service, but safe to keep
+        subprocess.run(["sudo", "reboot"])
+        return {"status": "success", "message": "Rebooting now..."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

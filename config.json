@@ -1,9 +1,9 @@
 {
     "slot_timeout": 40,
     "slot_expiry_timestamp": 1768386095.1896434,
-    "inactive_timeout": 300,
+    "inactive_timeout": 60,
     "auto_pause_enabled": true,
-    "speed_limit_enabled": true,
+    "speed_limit_enabled": false,
     "global_speed_limit": 10,
     "gaming_mode_enabled": true,
     "inactive_packet_threshold": 5,

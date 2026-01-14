@@ -2,6 +2,18 @@
     <h2>Device Hardware Status</h2>
     
     <div class="stats-grid">
+        <div class="stat-card" style="border-left: 4px solid #3b82f6;">
+            <span class="stat-title">Download Speed</span>
+            <div class="stat-value" style="color: #3b82f6;"><span id="stat-wan-down">0 B/s</span></div>
+            <p style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">WAN (Internet)</p>
+        </div>
+
+        <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+            <span class="stat-title">Upload Speed</span>
+            <div class="stat-value" style="color: #f59e0b;"><span id="stat-wan-up">0 B/s</span></div>
+            <p style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">WAN (Internet)</p>
+        </div>
+
         <div class="stat-card">
             <span class="stat-title">System Load (CPU)</span>
             <div class="stat-value"><span id="stat-cpu">0</span>%</div>
@@ -31,5 +43,20 @@
             <div class="stat-value"><span id="stat-disk">0</span>%</div>
             <p id="stat-disk-detail" style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">Free: 0GB</p>
         </div>
+    </div>
+
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+        <h3>System Actions</h3>
+        <p style="color: #6b7280; margin-bottom: 15px;">
+            Use this to restart the device if the system feels slow or network issues occur.
+        </p>
+        
+        <button onclick="rebootDevice()" class="btn btn-danger" style="max-width: 200px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                <line x1="12" y1="2" x2="12" y2="12"></line>
+            </svg>
+            Reboot Device
+        </button>
     </div>
 </div>

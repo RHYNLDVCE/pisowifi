@@ -58,7 +58,8 @@ async def websocket_endpoint(websocket: WebSocket, mac: str):
     except WebSocketDisconnect:
         state.manager.disconnect(mac, websocket)
         
-# --- CAPTIVE PORTAL ---
+# --- CAPTIVE PORTAL TRIGGERS ---
+# We keep these for specific OS checks
 @router.get("/generate_204")
 @router.get("/ncsi.txt")
 @router.get("/connecttest.txt")
@@ -66,6 +67,7 @@ async def websocket_endpoint(websocket: WebSocket, mac: str):
 async def captive_portal_trigger():
     return RedirectResponse("/")
 
+# --- HOME PAGE (PORTAL) ---
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     client_ip = request.client.host
@@ -79,8 +81,7 @@ async def home(request: Request):
         state.users[client_mac]["ip"] = client_ip
         state.users[client_mac]["last_active"] = time.time()
     
-    # Check for banners (WITH ORDERING LOGIC)
-    # Updated to look in 'static/banners/set'
+    # Check for banners
     banner_dir = "static/banners/set"
     banners = []
     
@@ -89,40 +90,28 @@ async def home(request: Request):
         saved_order = state.config.get("banner_order", [])
         ordered_files = []
         
-        # 1. Add saved ones first
         for f in saved_order:
-            if f in all_files:
-                ordered_files.append(f)
-        # 2. Add remaining
+            if f in all_files: ordered_files.append(f)
         for f in all_files:
-            if f not in ordered_files:
-                ordered_files.append(f)
+            if f not in ordered_files: ordered_files.append(f)
                 
         if ordered_files:
-            # FIXED PATH: /static/banners/set/{filename}
             banners = [f"/static/banners/set/{f}" for f in ordered_files]
     
-    # Fallback only if totally empty
     if not banners:
-        # Check if we have a default banner in the new default location
         default_dir = "static/banners/default"
         if os.path.exists(default_dir):
              defaults = [f for f in os.listdir(default_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif'))]
              if defaults:
-                 # Use the first valid image found in the default folder
                  banners = [f"/static/banners/default/{defaults[0]}"]
              else:
-                 # Last resort fallback if folder exists but is empty
                  banners = ["/static/banners/default/banner_default.jpg"]
         else:
-             # Fallback if folder doesn't exist at all
              banners = ["/static/banner_default.jpg"]
 
-    # Check Free Time Status
     user_data = state.users.get(client_mac, {})
     is_claimed = (user_data.get("free_claimed", 0) == 1)
 
-    # SOUND SETTINGS
     s_insert = state.config.get("sound_insert", "insert_coin_sound.mp3")
     s_coin = state.config.get("sound_coin", "coin-recieved.mp3")
 
@@ -134,11 +123,9 @@ async def home(request: Request):
         "banner_text": state.config.get("banner_text", ""),
         "banner_link": state.config.get("banner_link", ""),
         "coin_rates": state.config.get("coin_rates", "1:10,5:60,10:180,20:300"),
-        # PASS FREE TIME FLAGS
         "free_time_enabled": state.config.get("free_time_enabled", False),
         "free_claimed": is_claimed,
         "free_duration": state.config.get("free_time_duration", 5),
-        # SOUND URLs
         "sound_insert_url": f"/static/sounds/{s_insert}",
         "sound_coin_url": f"/static/sounds/{s_coin}"
     })
@@ -219,10 +206,15 @@ async def start_internet(mac: str):
             user["last_active"] = time.time()
             user_ip = user.get("ip")
             firewall.allow_user(mac, user_ip)
-            controller.turn_slot_off()
+            
+            # --- UPDATED: Safe Slot Turn-Off ---
+            # Only turn off the slot if the person connecting IS the one using it.
+            if controller.current_slot_user == mac:
+                controller.turn_slot_off()
+            # -----------------------------------
+            
             database.sync_user(mac, user)
             
-            # DELAY FOR FIREWALL
             time.sleep(1.0) 
             
             if mac in state.manager.active_connections:
@@ -256,10 +248,8 @@ async def pause_internet(mac: str):
         return {"result": "success"}
     return {"result": "fail"}
 
-# --- NEW: CLAIM FREE TIME ENDPOINT ---
 @router.post("/claim_free_time")
 async def claim_free_time(mac: str):
-    # 1. Validation
     if not state.config.get("free_time_enabled", False):
          return {"result": "disabled"}
     
@@ -269,20 +259,21 @@ async def claim_free_time(mac: str):
     if user.get("free_claimed", 0) == 1:
         return {"result": "already_claimed"}
 
-    # 2. Apply Free Time
     duration = state.config.get("free_time_duration", 5) 
     user["time"] += (duration * 60)
     user["free_claimed"] = 1
-    
-    # 3. Auto-Connect User
     user["status"] = "connected"
     user["last_active"] = time.time()
     firewall.allow_user(mac, user.get("ip"))
-    controller.turn_slot_off() # Ensure slot is off
+    
+    # --- UPDATED: Safe Slot Turn-Off ---
+    # Only turn off the slot if the claimer is the slot user
+    if controller.current_slot_user == mac:
+        controller.turn_slot_off()
+    # -----------------------------------
     
     database.sync_user(mac, user)
     
-    # 4. Notify Frontend
     if mac in state.manager.active_connections:
         await state.manager.send_personal_message({
             "type": "sync",
@@ -292,3 +283,11 @@ async def claim_free_time(mac: str):
         }, mac)
 
     return {"result": "success"}
+
+# --- FIX: CATCH-ALL ROUTE (The magic piece) ---
+# This grabs ANY other path (like /hotspot-detect.html) and redirects to home
+@router.get("/{full_path:path}")
+async def catch_all(full_path: str):
+    # Log it if you want to see what phones are asking for
+    # print(f"📱 Redirecting unknown path: {full_path}")
+    return RedirectResponse("/")
