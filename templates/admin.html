@@ -277,7 +277,7 @@
     
     setInterval(() => {
         if (localStorage.getItem('activeAdminTab') === 'device') updateSystemStats();
-    }, 1000);
+    }, 3000);
 
     document.addEventListener("DOMContentLoaded", () => {
         const lastTab = localStorage.getItem('activeAdminTab');
