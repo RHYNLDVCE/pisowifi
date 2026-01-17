@@ -18,7 +18,21 @@ defaults = {
     "gaming_mode_enabled": False,
     "inactive_packet_threshold": 100,
     "coin_rates": "1:10,5:60,10:180,20:300",
-    "pulse_value": 1  # EXPLICITLY SET: 1 Pulse = 1 Peso
+    "pulse_value": 1,
+    "restart_schedule": {
+        "enabled": False,
+        "time": "03:00"  # Default to 3:00 AM
+    },
+    "points_enabled": True,
+    "coin_point_map": {  # Default Point Values
+        "1": 0.5,
+        "5": 1,
+        "10": 3,
+        "20": 5
+    },
+    "point_promos": [    # Default Promo
+        {"id": 1, "name": "3 Hours Free", "cost": 20, "minutes": 180}
+    ]
 }
 
 # Start with defaults

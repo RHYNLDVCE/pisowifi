@@ -45,6 +45,33 @@
         </div>
     </div>
 
+    <div class="card">
+        <h3>⏳ Scheduled Restart</h3>
+        <p style="color: #6b7280; margin-bottom: 20px;">
+            Automatically restart the system daily to clear RAM and ensure stability.
+        </p>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
+            
+            <div class="toggle-wrapper">
+                <label class="switch">
+                    <input type="checkbox" id="restartEnabled">
+                    <span class="slider"></span>
+                </label>
+                <span style="font-weight: 500; color: #374151;">Enable Daily Reboot</span>
+            </div>
+
+            <div id="restartConfig" style="display: none; animation: fadeIn 0.3s;">
+                <label style="font-size: 0.85rem; margin-bottom: 5px; color:#6b7280;">Reboot Time:</label>
+                <input type="time" id="rebootTime" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit;">
+            </div>
+
+            <button onclick="saveRestartSchedule()" class="btn btn-primary" style="width: auto; margin-left: auto;">
+                Save Schedule
+            </button>
+        </div>
+    </div>
+
     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
         <h3>System Actions</h3>
         <p style="color: #6b7280; margin-bottom: 15px;">
@@ -60,3 +87,76 @@
         </button>
     </div>
 </div>
+
+<script>
+    // --- SCHEDULED RESTART LOGIC ---
+
+    // 1. Fetch settings from backend
+    async function loadRestartSettings() {
+        try {
+            let res = await fetch('/admin/get_restart_schedule');
+            if (!res.ok) return;
+            
+            let data = await res.json();
+            
+            const checkbox = document.getElementById('restartEnabled');
+            const timeInput = document.getElementById('rebootTime');
+
+            checkbox.checked = data.enabled;
+            timeInput.value = data.time || "03:00";
+            
+            toggleRestartTime(data.enabled);
+
+        } catch(e) { console.error("Failed to load schedule", e); }
+    }
+
+    // 2. Toggle UI visibility
+    document.getElementById('restartEnabled').addEventListener('change', (e) => {
+        toggleRestartTime(e.target.checked);
+    });
+
+    function toggleRestartTime(show) {
+        document.getElementById('restartConfig').style.display = show ? 'block' : 'none';
+    }
+
+    // 3. Save settings to backend
+    async function saveRestartSchedule() {
+        const btn = document.querySelector('button[onclick="saveRestartSchedule()"]');
+        let originalText = btn.innerText;
+        btn.innerText = "Saving...";
+        btn.disabled = true;
+
+        let enabled = document.getElementById('restartEnabled').checked;
+        let time = document.getElementById('rebootTime').value;
+
+        if (enabled && !time) {
+            alert("Please select a time for the reboot.");
+            btn.innerText = originalText;
+            btn.disabled = false;
+            return;
+        }
+
+        try {
+            let res = await fetch('/admin/set_restart_schedule', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ enabled: enabled, time: time })
+            });
+
+            let result = await res.json();
+            if(result.status === 'success') {
+                alert("✅ Schedule Saved Successfully!");
+            } else {
+                alert("❌ Error saving schedule");
+            }
+        } catch(e) {
+            alert("❌ Network Error");
+        }
+        
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+
+    // Initialize logic when this script runs
+    loadRestartSettings();
+</script>

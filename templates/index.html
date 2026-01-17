@@ -33,7 +33,7 @@
     .main-wrapper { 
         width: 100%; 
         max-width: 480px; 
-        min-height: 100vh;
+        min-height: 100vh; 
         display: flex; 
         flex-direction: column; 
         background: var(--bg-color);
@@ -169,7 +169,7 @@
         </div>
 
         <div class="header-content">
-            <h2>REYES Starlink</h2>
+            <h2>REYES STARLINK PISOWIFI</h2>
             <p>Premium Internet Connectivity</p>
             
             <div id="statusBadgeContainer" class="status-badge">
@@ -186,6 +186,11 @@
         <div class="info-section">
             <div class="info-row">
                 <span>Coin Balance: <b id="balanceDisplay">0</b></span>
+                {% if points_enabled %}
+                <span id="pointsContainer" style="color: #f59e0b; margin-left: 10px;">
+                    ⭐ <b id="pointsDisplay">{{ points }}</b> Pts
+                </span>
+                {% endif %}
             </div>
             <div class="info-row">
                 <span>IP: <b id="ipDisplay">...</b></span>
@@ -206,6 +211,12 @@
         <button class="btn btn-outline" onclick="openRatesModal()">
             View Rates
         </button>
+
+        {% if points_enabled %}
+        <button id="btnRewards" class="btn" style="background: #0b61f5; color: white; margin-top: 5px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);" onclick="window.location.href='/rewards'">
+            Loyalty Points
+        </button>
+        {% endif %}
 
         {% if free_time_enabled and not free_claimed %}
         <button id="btnFree" class="btn" style="background: #8b5cf6; color: white; margin-top: 5px;" onclick="claimFreeTime()">
@@ -244,10 +255,17 @@
                 <span class="stat-label">Time:</span>
                 <span id="modalTimeVal" class="stat-value">0s</span>
             </div>
-            <div class="stat-row">
+            <div class="stat-row border-bottom">
                 <span class="stat-label">Total Amount:</span>
                 <span id="modalAmountVal" class="stat-value">00</span>
             </div>
+            
+            {% if points_enabled %}
+            <div class="stat-row">
+                <span class="stat-label">Points Earned:</span>
+                <span id="modalPointsVal" class="stat-value" style="color: #f59e0b;">0</span>
+            </div>
+            {% endif %}
         </div>
 
         <button id="btnModalAction" class="btn btn-danger" onclick="handleModalAction()">CANCEL</button>
@@ -296,6 +314,10 @@
     var mac = "{{ mac }}";
     var ratesStr = "{{ coin_rates }}"; 
     
+    // --- INITIALIZE POINTS DATA ---
+    var pointMap = JSON.parse('{{ coin_point_map | tojson | safe }}');
+    var pointsEnabled = JSON.parse('{{ points_enabled | tojson | safe }}');
+    
     // --- UI SETUP ---
     var badChar = String.fromCharCode(123);
     if (!mac || mac.startsWith("None") || mac.startsWith(badChar)) mac = "Unknown";
@@ -304,8 +326,7 @@
 
     // --- SOUND SYSTEM ---
     var audioInsert = new Audio("{{ sound_insert_url }}");
-    audioInsert.loop = true; // Loop background sound
-    
+    audioInsert.loop = true; 
     var audioCoin = new Audio("{{ sound_coin_url }}");
 
     // --- CAROUSEL LOGIC ---
@@ -327,6 +348,7 @@
     let slotMaxTime = 30; // Default fallback    
     let currentStatus = "loading"; 
     let ws = null;
+    let coinProcessTimeout = null;
 
     // --- RESTORE FROM CACHE ---
     const cachedTime = localStorage.getItem("piso_time_" + mac);
@@ -356,14 +378,21 @@
             } else if (data.type === "slot_opened") {
                 localTime = data.time_remaining;
                 handleSlotLogic(data);
-                // Play Loop Sound
                 audioInsert.play().catch(e => console.log("Auto-play blocked:", e));
+            } else if (data.type === "coin_counting") {
+                const btn = document.getElementById("btnModalAction");
+                btn.disabled = true;
+                btn.innerHTML = `<span class="pulse-animation">Processing...</span>`; 
+                btn.className = "btn btn-disabled";
+                btn.style.background = "#6b7280"; 
+                btn.style.color = "white";
+
             } else if (data.type === "coin_inserted") {
                 localTime = data.time_remaining;
                 handleSlotLogic(data);
-                // Play Coin Sound
                 audioCoin.currentTime = 0; 
                 audioCoin.play().catch(e => console.log("Audio Error:", e));
+
             } else if (data.type === "slot_closed") {
                 if (isModalOpen) closeModal(false);
             }
@@ -377,6 +406,10 @@
             let data = await res.json();
             localTime = data.time_remaining;
             updateUI(data);
+            
+            if(data.points_enabled !== undefined) pointsEnabled = data.points_enabled;
+            if(data.coin_point_map) pointMap = data.coin_point_map;
+
             if (data.slot_seconds > 0) handleSlotLogic(data);
         } catch(e) {}
     }
@@ -401,7 +434,6 @@
         }
     }, 1000);
 
-    // --- TOAST NOTIFICATION ---
     function showToast(message, type = 'info') {
         const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
@@ -441,14 +473,28 @@
 
         document.getElementById("modalTimeVal").innerText = formatHumanTime(sessionAddedTime * 60);
         document.getElementById("modalAmountVal").innerText = parseFloat(currentBalance).toFixed(2);
+        
+        // --- LIVE CALCULATION: Pending Points for Current Session ---
+        if(pointsEnabled) {
+             let pendingPoints = calculatePointsFromBalance(currentBalance);
+             let el = document.getElementById("modalPointsVal");
+             if(el) {
+                 // Convert to number to strip trailing zeros, but allow decimals
+                 el.innerText = +pendingPoints.toFixed(2);
+             }
+        }
 
         const btn = document.getElementById("btnModalAction");
         if (sessionAddedTime > 0) {
             btn.innerText = "DONE & RESUME"; 
             btn.className = "btn btn-resume pulse-animation"; 
+            btn.disabled = false;
+            btn.style.background = ""; // Reset style
+            btn.style.color = "";
         } else {
             btn.innerText = "CANCEL";
             btn.className = "btn btn-disabled";
+            btn.disabled = false; // Allow cancel if 0 balance
             btn.style.background = "var(--danger)";
             btn.style.color = "white";
         }
@@ -480,6 +526,30 @@
         return totalMins;
     }
 
+    // --- NEW: Front-End Greedy Points Calculation ---
+    function calculatePointsFromBalance(balance) {
+        let rem = parseInt(balance); // Greedy usually works on whole numbers, but can adapt
+        let totalPts = 0;
+        
+        // Convert map to array and sort desc by coin value
+        let rates = [];
+        for(let k in pointMap) {
+            rates.push({amt: parseFloat(k), val: parseFloat(pointMap[k])});
+        }
+        rates.sort((a, b) => b.amt - a.amt);
+
+        rates.forEach(r => {
+            if(r.amt > 0) {
+                let count = Math.floor(rem / r.amt);
+                if(count > 0) {
+                    totalPts += count * r.val;
+                    rem = rem % r.amt;
+                }
+            }
+        });
+        return totalPts;
+    }
+
     function openRatesModal() {
         let container = document.getElementById("ratesList");
         container.innerHTML = "";
@@ -497,7 +567,27 @@
             row.className = "stat-row border-bottom";
             row.style.fontSize = "0.95rem";
             row.style.padding = "12px 15px";
-            row.innerHTML = `<span style="font-weight:700;">₱${r.amt}</span> <span class="stat-value" style="font-weight:400; color:var(--text-sub);">${formatHumanTime(r.mins * 60)}</span>`;
+            
+            // --- POINTS LOGIC IN RATES ---
+            let pointsHtml = "";
+            if (pointsEnabled && pointMap) {
+                let pts = pointMap[r.amt.toString()] || 0;
+                if (pts > 0) {
+                    pointsHtml = `<span style="color:#f59e0b; font-weight:600; font-size:0.85rem;">+${pts} Pts</span>`;
+                }
+            }
+
+            // --- UPDATED LAYOUT: GRID FOR TABLE-LIKE SPACING ---
+            // Column 1 (Price): Fixed 80px width
+            // Column 2 (Points): Takes available middle space
+            // Column 3 (Time): Auto width, right aligned
+            row.innerHTML = `
+                <div style="display:grid; grid-template-columns: 80px 1fr auto; align-items:center; width:100%;">
+                    <span style="font-weight:700; font-size:1.1rem;">₱${r.amt}</span>
+                    <div style="text-align: left;">${pointsHtml}</div>
+                    <span class="stat-value" style="font-weight:500; color:var(--text-sub); text-align: right;">${formatHumanTime(r.mins * 60)}</span>
+                </div>
+            `;
             container.appendChild(row);
         });
         document.getElementById("ratesModal").style.display = "flex";
@@ -508,8 +598,6 @@
         document.getElementById("coinModal").style.display = "none";
         isModalOpen = false;
         sessionAddedTime = 0;
-        
-        // STOP AUDIO
         audioInsert.pause();
         audioInsert.currentTime = 0;
     }
@@ -519,11 +607,9 @@
         closeModal(true);
     }
 
-    // --- HANDLE BLOCKED STATUS ---
     function activateSlot() {
         fetch(`/enable_slot?mac=${mac}`).then(r => r.json()).then(d => {
             if(d.result === "success") {
-                // Good to go
             } else if (d.result === "blocked") {
                 showToast("Access Denied: You are BLOCKED. Contact Owner.", "error");
             } else {
@@ -532,9 +618,7 @@
         });
     }
 
-    // --- CORE CONNECTION WITH RELOAD FIX ---
     function connectInternet() {
-        // UI Optimistic Update
         currentStatus = "connected"; 
         updateUI({ status: "connected", time_remaining: localTime, is_busy: false, balance: 0 });
         document.getElementById("statusBadge").innerText = "OPENING PORTAL...";
@@ -543,14 +627,8 @@
         fetch(`/connect?mac=${mac}`, {method:'POST'}).then(r => r.json()).then(d => {
             if(d.result === "success") {
                 document.getElementById("connectionStatus").innerText = "Connection Established!";
-                
-                // --- FIX: DELAY AND RELOAD ---
                 showToast("Connected! Validating...", "success");
-                
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-
+                setTimeout(() => { window.location.reload(); }, 1500);
             } else if (d.result === "blocked") {
                 updateUI({ status: "paused", time_remaining: localTime, is_busy: false, balance: 0 }); 
                 showToast("Access Denied: You are BLOCKED. Contact Owner.", "error");
@@ -570,9 +648,7 @@
         fetch(`/pause?mac=${mac}`, {method:'POST'}).then(r => r.json());
     }
 
-    // --- NEW: CLAIM FREE TIME LOGIC (2-STEP MODAL) ---
     function claimFreeTime() {
-        // Step 1: Open Confirmation Modal
         document.getElementById('confirmModal').style.display = 'flex';
     }
 
@@ -581,9 +657,7 @@
     }
 
     function proceedClaim() {
-        // Step 2: Actually process the claim
-        closeConfirmModal(); // Close confirm modal
-        
+        closeConfirmModal();
         const btn = document.getElementById("btnFree");
         if(btn) {
             btn.disabled = true;
@@ -594,7 +668,6 @@
         .then(r => r.json())
         .then(d => {
             if(d.result === "success") {
-                // Show Success Modal
                 document.getElementById('successModal').style.display = 'flex';
                 if(btn) btn.style.display = 'none'; 
             } else if (d.result === "already_claimed") {
@@ -614,10 +687,9 @@
 
     function closeSuccessModal() {
         document.getElementById('successModal').style.display = 'none';
-        window.location.reload(); // Reload to refresh connection state
+        window.location.reload();
     }
 
-    // --- HELPER FUNCTIONS ---
     function updateUI(data) {
         currentStatus = data.status;
         localStorage.setItem("piso_time_" + mac, data.time_remaining);
@@ -626,6 +698,11 @@
 
         let bal = data.balance !== undefined ? data.balance : 0;
         document.getElementById("balanceDisplay").innerText = bal;
+
+        if(data.points !== undefined) {
+             let el = document.getElementById("pointsDisplay");
+             if(el) el.innerText = data.points;
+        }
 
         const btnInsert = document.getElementById("btnInsert");
         const btnAction = document.getElementById("btnAction");
@@ -693,12 +770,10 @@
         let h = Math.floor(seconds / 3600);
         let m = Math.floor((seconds % 3600) / 60);
         let s = seconds % 60;
-        
         let parts = [];
         if (h > 0) parts.push(h + "h");
         if (m > 0 || h > 0) parts.push(m + "m");
         if (s > 0 || parts.length === 0) parts.push(s + "s");
-        
         return parts.join(" ");
     }
 

@@ -1,6 +1,6 @@
 {
-    "slot_timeout": 40,
-    "slot_expiry_timestamp": 1768495333.0150833,
+    "slot_timeout": 50,
+    "slot_expiry_timestamp": 0,
     "inactive_timeout": 120,
     "auto_pause_enabled": true,
     "speed_limit_enabled": true,
@@ -9,14 +9,39 @@
     "inactive_packet_threshold": 5,
     "coin_rates": "1:12,5:70,10:181,20:481",
     "pulse_value": 5,
+    "restart_schedule": {
+        "enabled": true,
+        "time": "03:00"
+    },
+    "points_enabled": true,
+    "coin_point_map": {
+        "1": 0.25,
+        "5": 1.5,
+        "10": 3.5,
+        "20": 8.0
+    },
+    "point_promos": [
+        {
+            "id": 1,
+            "name": "1hr 30mins",
+            "cost": 20.0,
+            "minutes": 90
+        },
+        {
+            "id": 1768609763541,
+            "name": "5 hours",
+            "cost": 70.0,
+            "minutes": 300
+        }
+    ],
     "inactive_bytes_threshold": 500,
-    "banner_text": "Jeffrey Ansibay FB Account",
-    "banner_link": "https://www.facebook.com/jeffrey.ansibay.3",
+    "banner_text": "Open JellyFin",
+    "banner_link": "http://192.168.0.166:8096/",
     "banner_order": [
         "MLBB-Sora2-1125x633.jpg"
     ],
     "free_time_enabled": false,
-    "free_time_duration": 481,
+    "free_time_duration": 0,
     "sound_insert": "insert_coin_sound.mp3",
     "sound_coin": "coin-recieved.mp3"
 }

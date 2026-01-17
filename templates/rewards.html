@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}Rewards - REYES Starlink{% endblock %}
+
+{% block styles %}
+<style>
+    :root {
+        --primary: #4f46e5;
+        --secondary: #64748b;
+        --accent: #f59e0b;
+        --bg-color: #f8fafc;
+    }
+
+    body { 
+        background-color: var(--bg-color); 
+        color: #1e293b; 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+        margin: 0;
+    }
+
+    .main-wrapper { 
+        max-width: 480px; 
+        margin: 0 auto; 
+        min-height: 100vh; 
+        display: flex; 
+        flex-direction: column; 
+        background: #ffffff;
+        box-shadow: 0 0 25px rgba(0,0,0,0.05);
+    }
+    
+    /* HEADER DESIGN */
+    .header-card {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: white; 
+        padding: 40px 20px 55px; /* Extra bottom padding for overlap */
+        border-bottom-left-radius: 35px; 
+        border-bottom-right-radius: 35px;
+        text-align: center; 
+        box-shadow: 0 15px 35px -10px rgba(79, 70, 229, 0.4);
+        position: relative;
+        z-index: 10;
+    }
+    
+    .points-label { 
+        font-size: 0.8rem; 
+        text-transform: uppercase; 
+        letter-spacing: 2px; 
+        font-weight: 700; 
+        opacity: 0.85; 
+        margin-bottom: 5px;
+    }
+    
+    .points-val { 
+        font-size: 4.5rem; 
+        font-weight: 800; 
+        line-height: 1;
+        margin: 5px 0;
+        text-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .points-sub {
+        font-size: 1.1rem;
+        font-weight: 500;
+        opacity: 0.95;
+    }
+    
+    /* CONTENT AREA */
+    .content-area { 
+        padding: 0 25px 40px; 
+        flex-grow: 1; 
+        margin-top: -30px; /* Overlap effect */
+        position: relative;
+        z-index: 20;
+    }
+    
+    .section-title { 
+        font-size: 1.15rem; 
+        font-weight: 700; 
+        color: #334155; 
+        margin: 60px 0 20px; 
+        display: flex; 
+        align-items: center; 
+        gap: 8px;
+    }
+    
+    /* PROMO CARD DESIGN */
+    .promo-card {
+        background: white; 
+        border-radius: 20px; 
+        padding: 20px; 
+        margin-bottom: 15px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 4px 10px -3px rgba(0, 0, 0, 0.03); 
+        border: 1px solid #f1f5f9;
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .promo-card:active { transform: scale(0.98); }
+    
+    .promo-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .promo-name { 
+        margin: 0; 
+        font-size: 1.15rem; 
+        font-weight: 700; 
+        color: #1e293b; 
+    }
+    
+    .promo-cost { 
+        margin: 0;
+        color: var(--secondary); 
+        font-weight: 500; 
+        font-size: 0.95rem; 
+    }
+    
+    .cost-highlight {
+        color: var(--accent);
+        font-weight: 700;
+    }
+    
+    /* BUTTONS */
+    .btn-redeem {
+        background: var(--accent); 
+        color: white; 
+        border: none; 
+        padding: 12px 24px;
+        border-radius: 12px; 
+        font-weight: 700; 
+        font-size: 0.95rem; 
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
+        transition: background 0.2s;
+        min-width: 100px;
+    }
+    
+    .btn-redeem:hover { background: #d97706; }
+    
+    .btn-redeem:disabled { 
+        background: #e2e8f0; 
+        color: #94a3b8; 
+        cursor: not-allowed; 
+        box-shadow: none; 
+    }
+    
+    /* Back Button Styling (Cleaner Look) */
+    .btn-back-wrapper {
+        margin-top: 35px;
+        text-align: center;
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 25px;
+        background: transparent; 
+        border: 2px solid #e2e8f0; 
+        border-radius: 50px;
+        color: #64748b; 
+        text-decoration: none; 
+        font-weight: 600; 
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+    
+    .btn-back:hover, .btn-back:active { 
+        border-color: #cbd5e1; 
+        background: #f8fafc;
+        color: #334155;
+    }
+
+    /* EMPTY STATE */
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: #94a3b8;
+        background: #f8fafc;
+        border-radius: 16px;
+        border: 2px dashed #e2e8f0;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-wrapper">
+    <div class="header-card">
+        <div class="points-label">Your Balance</div>
+        <div class="points-val">
+            <span style="font-size: 0.8em; color: #fbbf24; text-shadow: 0 2px 10px rgba(251, 191, 36, 0.4);">★</span> 
+            {{ points | int }}
+        </div>
+        <div class="points-sub">Loyalty Points</div>
+    </div>
+
+    <div class="content-area">
+        {% if not enabled %}
+            <div class="empty-state">
+                <h3>System Disabled</h3>
+                <p style="margin:5px 0 0;">The rewards system is currently offline.</p>
+            </div>
+        {% else %}
+            <div class="section-title">🎁 Available Rewards</div>
+            
+            {% if promos|length == 0 %}
+                <div class="empty-state">
+                    <p>No rewards available right now.</p>
+                </div>
+            {% endif %}
+
+            {% for p in promos %}
+            <div class="promo-card">
+                <div class="promo-info">
+                    <div class="promo-name">{{ p.name }}</div>
+                    <div class="promo-cost">
+                        Cost: <span class="cost-highlight">{{ p.cost | int }} Points</span>
+                    </div>
+                </div>
+                
+                <button class="btn-redeem" 
+                    data-id="{{ p.id }}" 
+                    data-name="{{ p.name }}" 
+                    data-cost="{{ p.cost | int }}"
+                    onclick="handleRedeem(this)"
+                    {% if points < p.cost %}disabled{% endif %}>
+                    {% if points < p.cost %}
+                        Locked
+                    {% else %}
+                        Redeem
+                    {% endif %}
+                </button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="btn-back-wrapper">
+            <a href="/" class="btn-back">
+                <span>←</span> Back to Home
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function handleRedeem(btn) {
+        const id = btn.getAttribute('data-id');
+        const name = btn.getAttribute('data-name');
+        const cost = btn.getAttribute('data-cost');
+
+        if(!confirm(`Redeem "${name}" for ${cost} points?`)) return;
+
+        const originalText = btn.innerText;
+        btn.innerText = "Processing...";
+        btn.disabled = true;
+
+        try {
+            let res = await fetch('/redeem_points', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ promo_id: parseInt(id) })
+            });
+            let data = await res.json();
+            
+            if(data.status === "success") {
+                alert("🎉 Success! " + data.message);
+                window.location.reload();
+            } else {
+                alert("❌ Error: " + data.message);
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        } catch(e) {
+            alert("Network Error");
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+</script>
+{% endblock %}

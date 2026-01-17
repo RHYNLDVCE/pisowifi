@@ -182,7 +182,13 @@
             if(sidebar.classList.contains('open')) toggleSidebar();
         }
 
-        if(sectionId === 'device') updateSystemStats();
+        // --- UPDATED: REFRESH DATA FOR DEVICE TAB ---
+        if(sectionId === 'device') {
+            updateSystemStats();
+            if (typeof loadRestartSettings === 'function') {
+                loadRestartSettings();
+            }
+        }
     }
 
     function toggleSidebar() {

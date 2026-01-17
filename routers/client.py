@@ -43,6 +43,38 @@ def calculate_time_from_balance(balance):
 
     return total_minutes
 
+# --- HELPER: GREEDY POINTS CALCULATION (NEW) ---
+def calculate_points_from_balance(balance):
+    """
+    Converts total balance to points using the greedy approach.
+    """
+    if not state.config.get("points_enabled", False):
+        return 0.0
+
+    point_map = state.config.get("coin_point_map", {"1":0.5, "5":1, "10":3, "20":5})
+    rates = []
+    
+    # Convert map to sortable list
+    for k, v in point_map.items():
+        try:
+            rates.append((int(k), float(v)))
+        except: pass
+    
+    # Sort by denomination descending (Greedy)
+    rates.sort(key=lambda x: x[0], reverse=True)
+    
+    total_points = 0.0
+    rem_balance = int(balance)
+    
+    for denom, val in rates:
+        if denom <= 0: continue
+        count = rem_balance // denom
+        if count > 0:
+            total_points += count * val
+            rem_balance %= denom
+            
+    return total_points
+
 # --- WEBSOCKET ROUTE ---
 @router.websocket("/ws/{mac}")
 async def websocket_endpoint(websocket: WebSocket, mac: str):
@@ -75,8 +107,8 @@ async def home(request: Request):
     
     if client_mac:
         if client_mac not in state.users:
-            # Init new user
-            state.users[client_mac] = {"time": 0, "status": "new", "balance": 0, "free_claimed": 0}
+            # Init new user with points
+            state.users[client_mac] = {"time": 0, "status": "new", "balance": 0, "free_claimed": 0, "points": 0}
         
         state.users[client_mac]["ip"] = client_ip
         state.users[client_mac]["last_active"] = time.time()
@@ -127,7 +159,11 @@ async def home(request: Request):
         "free_claimed": is_claimed,
         "free_duration": state.config.get("free_time_duration", 5),
         "sound_insert_url": f"/static/sounds/{s_insert}",
-        "sound_coin_url": f"/static/sounds/{s_coin}"
+        "sound_coin_url": f"/static/sounds/{s_coin}",
+        # --- POINTS DATA PASSED TO TEMPLATE ---
+        "points": user_data.get("points", 0),
+        "points_enabled": state.config.get("points_enabled", False),
+        "coin_point_map": state.config.get("coin_point_map", {}) 
     })
 
 @router.get("/status")
@@ -151,7 +187,11 @@ async def check_status(mac: str, request: Request):
         "slot_max_seconds": state.config["slot_timeout"],
         "coin_rates": state.config.get("coin_rates", "1:10,5:60,10:180,20:300"),
         "banner_text": state.config.get("banner_text", ""),
-        "banner_link": state.config.get("banner_link", "")
+        "banner_link": state.config.get("banner_link", ""),
+        # --- INCLUDE POINTS DATA ---
+        "points": user.get("points", 0),
+        "points_enabled": state.config.get("points_enabled", False),
+        "coin_point_map": state.config.get("coin_point_map", {})
     }
 
 # --- ACTION ROUTES ---
@@ -173,6 +213,7 @@ async def enable_slot(mac: str):
                 "type": "slot_opened",
                 "slot_seconds": state.config["slot_timeout"],
                 "balance": current_balance,
+                "points": user.get("points", 0), # Pass points here
                 "coin_rates": state.config.get("coin_rates", "1:10,5:60,10:180,20:300"),
                 "time_remaining": user.get("time", 0)
             }, mac)
@@ -196,8 +237,17 @@ async def start_internet(mac: str):
         balance = user.get("balance", 0)
         
         if balance > 0:
+            # 1. Calculate Time (Existing)
             added_minutes = calculate_time_from_balance(balance)
             user["time"] += (added_minutes * 60)
+            
+            # 2. Calculate Points (New Greedy Logic)
+            if state.config.get("points_enabled", False):
+                earned_points = calculate_points_from_balance(balance)
+                if "points" not in user: user["points"] = 0
+                user["points"] += earned_points
+            
+            # 3. Reset Balance
             user["balance"] = 0 
             database.sync_user(mac, user)
         
@@ -207,11 +257,9 @@ async def start_internet(mac: str):
             user_ip = user.get("ip")
             firewall.allow_user(mac, user_ip)
             
-            # --- UPDATED: Safe Slot Turn-Off ---
-            # Only turn off the slot if the person connecting IS the one using it.
+            # --- Safe Slot Turn-Off ---
             if controller.current_slot_user == mac:
                 controller.turn_slot_off()
-            # -----------------------------------
             
             database.sync_user(mac, user)
             
@@ -222,7 +270,8 @@ async def start_internet(mac: str):
                     "type": "sync",
                     "status": "connected",
                     "time_remaining": user["time"],
-                    "balance": 0
+                    "balance": 0,
+                    "points": user.get("points", 0) 
                 }, mac)
                 
             return {"result": "success"}
@@ -243,7 +292,8 @@ async def pause_internet(mac: str):
                 "type": "sync",
                 "status": "paused",
                 "time_remaining": state.users[mac]["time"],
-                "balance": state.users[mac].get("balance", 0)
+                "balance": state.users[mac].get("balance", 0),
+                "points": state.users[mac].get("points", 0) # Pass points here
             }, mac)
         return {"result": "success"}
     return {"result": "fail"}
@@ -266,11 +316,9 @@ async def claim_free_time(mac: str):
     user["last_active"] = time.time()
     firewall.allow_user(mac, user.get("ip"))
     
-    # --- UPDATED: Safe Slot Turn-Off ---
-    # Only turn off the slot if the claimer is the slot user
+    # --- Safe Slot Turn-Off ---
     if controller.current_slot_user == mac:
         controller.turn_slot_off()
-    # -----------------------------------
     
     database.sync_user(mac, user)
     
@@ -279,15 +327,90 @@ async def claim_free_time(mac: str):
             "type": "sync",
             "status": "connected",
             "time_remaining": user["time"],
-            "balance": 0
+            "balance": 0,
+            "points": user.get("points", 0) # Pass points here
         }, mac)
 
     return {"result": "success"}
 
-# --- FIX: CATCH-ALL ROUTE (The magic piece) ---
-# This grabs ANY other path (like /hotspot-detect.html) and redirects to home
+
+@router.get("/rewards", response_class=HTMLResponse)
+async def rewards_page(request: Request):
+    client_ip = request.client.host
+    mac = utils.get_mac(client_ip)
+    
+    # Ensure user exists in memory if they visit this page directly
+    if mac:
+        if mac not in state.users:
+            state.users[mac] = {"time": 0, "status": "new", "balance": 0, "points": 0}
+        
+    user = state.users.get(mac, {})
+    points = user.get("points", 0)
+    
+    # Get config
+    enabled = state.config.get("points_enabled", False)
+    promos = state.config.get("point_promos", [])
+
+    return templates.TemplateResponse("rewards.html", {
+        "request": request,
+        "mac": mac,
+        "points": points,
+        "promos": promos,
+        "enabled": enabled,
+        "banner_text": state.config.get("banner_text", ""),
+        "banner_link": state.config.get("banner_link", "")
+    })
+
+@router.post("/redeem_points")
+async def redeem_points(data: dict, request: Request): 
+    promo_id = data.get("promo_id")
+    client_ip = request.client.host
+    mac = utils.get_mac(client_ip)
+    
+    if not mac or mac not in state.users:
+        return {"status": "error", "message": "User not found"}
+        
+    if not state.config.get("points_enabled", False):
+        return {"status": "error", "message": "Rewards system is currently disabled."}
+
+    user = state.users[mac]
+    if "points" not in user: user["points"] = 0
+    
+    # Find promo
+    promos = state.config.get("point_promos", [])
+    target_promo = next((p for p in promos if p["id"] == promo_id), None)
+    
+    if not target_promo:
+        return {"status": "error", "message": "Invalid Promo"}
+        
+    if user["points"] < target_promo["cost"]:
+        return {"status": "error", "message": "Not enough points"}
+        
+    # EXECUTE REDEEM
+    user["points"] -= target_promo["cost"]
+    # Convert minutes to seconds
+    added_time = target_promo["minutes"] * 60
+    user["time"] += added_time
+    
+    # Auto-activate user if they were expired
+    user["status"] = "connected"
+    user["last_active"] = time.time()
+    firewall.allow_user(mac, user.get("ip"))
+    
+    database.sync_user(mac, user)
+    
+    # Sync via WebSocket
+    if mac in state.manager.active_connections:
+        await state.manager.send_personal_message({
+            "type": "sync",
+            "status": "connected",
+            "time_remaining": user["time"],
+            "points": user["points"]
+        }, mac)
+
+    return {"status": "success", "message": f"Successfully redeemed: {target_promo['name']}"}
+
+# --- CATCH-ALL ROUTE ---
 @router.get("/{full_path:path}")
 async def catch_all(full_path: str):
-    # Log it if you want to see what phones are asking for
-    # print(f"📱 Redirecting unknown path: {full_path}")
     return RedirectResponse("/")

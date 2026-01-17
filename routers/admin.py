@@ -7,10 +7,10 @@ import psutil
 import socket 
 import subprocess
 from datetime import datetime, timedelta
-from typing import List
-from fastapi import APIRouter, Request, Form, UploadFile, File, Depends
+from typing import List, Dict
+from fastapi import APIRouter, Request, Form, UploadFile, File, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-
+from pydantic import BaseModel
 import config
 from core import database, state, security
 from core.templates import templates
@@ -19,6 +19,33 @@ from network import firewall
 router = APIRouter()
 
 # --- LOGIN / AUTH ROUTES ---
+class RestartScheduleRequest(BaseModel):
+    enabled: bool
+    time: str
+
+class PromoItem(BaseModel):
+    id: int
+    name: str
+    cost: float  # Changed to float to support 0.5 points
+    minutes: int
+
+class PointsConfigRequest(BaseModel):
+    enabled: bool
+    coin_map: Dict[str, float]  # Map "1" -> 0.5
+    promos: List[PromoItem]
+
+@router.get("/admin/get_restart_schedule")
+async def get_restart_schedule(authorized: bool = Depends(security.is_admin)):
+    return state.config.get("restart_schedule", {"enabled": False, "time": "03:00"})
+
+@router.post("/admin/set_restart_schedule")
+async def set_restart_schedule(data: RestartScheduleRequest, authorized: bool = Depends(security.is_admin)):
+    state.config["restart_schedule"] = {
+        "enabled": data.enabled,
+        "time": data.time
+    }
+    state.save_config()
+    return {"status": "success", "message": "Schedule updated"}
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
@@ -372,3 +399,20 @@ async def reboot_device(authorized: bool = Depends(security.is_admin)):
         return {"status": "success", "message": "Rebooting now..."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+@router.get("/admin/get_points_config")
+async def get_points_config(authorized: bool = Depends(security.is_admin)):
+    return {
+        "enabled": state.config.get("points_enabled", False),
+        "coin_map": state.config.get("coin_point_map", {"1":0.5, "5":1, "10":3, "20":5}),
+        "promos": state.config.get("point_promos", [])
+    }
+
+@router.post("/admin/save_points_config")
+async def save_points_config(data: PointsConfigRequest, authorized: bool = Depends(security.is_admin)):
+    state.config["points_enabled"] = data.enabled
+    state.config["coin_point_map"] = data.coin_map
+    state.config["point_promos"] = [p.dict() for p in data.promos]
+    state.save_config()
+    return {"status": "success", "message": "Points configuration saved"}

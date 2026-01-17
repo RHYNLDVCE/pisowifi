@@ -10,7 +10,7 @@ def init_db():
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     
-    # 1. Users Table
+    # 1. Users Table (Updated with 'points')
     c.execute('''CREATE TABLE IF NOT EXISTS users (
                     mac TEXT PRIMARY KEY,
                     ip TEXT,
@@ -18,10 +18,11 @@ def init_db():
                     status TEXT,
                     last_updated INTEGER,
                     balance INTEGER DEFAULT 0,
-                    free_claimed INTEGER DEFAULT 0
+                    free_claimed INTEGER DEFAULT 0,
+                    points REAL DEFAULT 0
                 )''')
     
-    # --- MIGRATIONS ---
+    # --- MIGRATIONS (Run safely if columns exist) ---
     try:
         c.execute("ALTER TABLE users ADD COLUMN balance INTEGER DEFAULT 0")
     except:
@@ -29,6 +30,12 @@ def init_db():
 
     try:
         c.execute("ALTER TABLE users ADD COLUMN free_claimed INTEGER DEFAULT 0")
+    except:
+        pass
+
+    # --- NEW: MIGRATION FOR POINTS ---
+    try:
+        c.execute("ALTER TABLE users ADD COLUMN points REAL DEFAULT 0")
     except:
         pass
 
@@ -73,28 +80,42 @@ def verify_admin(username, plain_password):
 def load_users():
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    c.execute("SELECT mac, ip, time_remaining, status, balance, free_claimed FROM users")
+    # Updated Query to include 'points'
+    c.execute("SELECT mac, ip, time_remaining, status, balance, free_claimed, points FROM users")
     rows = c.fetchall()
     conn.close()
+    
     users_dict = {}
     for row in rows:
+        # Handle potential NULLs or missing columns from old DB versions
         balance = row[4] if len(row) > 4 and row[4] is not None else 0
         claimed = row[5] if len(row) > 5 and row[5] is not None else 0
+        points = row[6] if len(row) > 6 and row[6] is not None else 0
         
         users_dict[row[0]] = {
             "ip": row[1], 
             "time": row[2], 
             "status": row[3],
             "balance": balance,
-            "free_claimed": claimed
+            "free_claimed": claimed,
+            "points": points  # <--- Load Points
         }
     return users_dict
 
 def sync_user(mac, data):
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    c.execute("INSERT OR REPLACE INTO users (mac, ip, time_remaining, status, last_updated, balance, free_claimed) VALUES (?, ?, ?, ?, ?, ?, ?)", 
-                 (mac, data.get("ip", ""), data["time"], data["status"], int(time.time()), data.get("balance", 0), data.get("free_claimed", 0)))
+    # Updated Query to save 'points'
+    c.execute("INSERT OR REPLACE INTO users (mac, ip, time_remaining, status, last_updated, balance, free_claimed, points) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
+                 (mac, 
+                  data.get("ip", ""), 
+                  data["time"], 
+                  data["status"], 
+                  int(time.time()), 
+                  data.get("balance", 0), 
+                  data.get("free_claimed", 0), 
+                  data.get("points", 0)  # <--- Save Points
+                 ))
     conn.commit()
     conn.close()
 
@@ -105,7 +126,7 @@ def delete_user(mac):
     conn.commit()
     conn.close()
 
-# --- NEW: RESET FREE CLAIMS ---
+# --- RESET FREE CLAIMS ---
 def reset_all_free_claimed():
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()

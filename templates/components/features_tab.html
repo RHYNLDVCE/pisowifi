@@ -71,7 +71,7 @@
         height: 18px;
         width: 18px;
         left: 3px;
-        bottom: 3px; /* (24px height - 18px circle) / 2 = 3px spacing for perfect center */
+        bottom: 3px; 
         background-color: white;
         transition: .3s;
         border-radius: 50%;
@@ -84,6 +84,7 @@
 
 <div id="features" class="section">
     <h2>Network Features</h2>
+    
     <form action="/admin/update_settings" method="post">
         
         <div class="card">
@@ -183,9 +184,56 @@
 
         <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Save Network Settings</button>
     </form>
+
+    <div class="card" style="margin-top: 25px;">
+        <h3>⭐ Loyalty Points System</h3>
+        <p class="text-muted" style="margin-bottom: 20px;">Configure points earned per coin and redemption promos.</p>
+        
+        <div class="settings-grid">
+            <div class="input-group" style="grid-column: span 2;">
+                <label>Enable Rewards System</label>
+                <div class="toggle-wrapper">
+                    <label class="switch">
+                        <input type="checkbox" id="pointsEnabled" onchange="togglePointsInput()">
+                        <span class="slider"></span>
+                    </label>
+                    <span id="points_status" class="toggle-status">Disabled</span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>1 Peso Coin (Points)</label>
+                <input type="number" id="pts_1" step="0.1" placeholder="0.5">
+            </div>
+            <div class="input-group">
+                <label>5 Peso Coin (Points)</label>
+                <input type="number" id="pts_5" step="0.1" placeholder="1">
+            </div>
+            <div class="input-group">
+                <label>10 Peso Coin (Points)</label>
+                <input type="number" id="pts_10" step="0.1" placeholder="3">
+            </div>
+            <div class="input-group">
+                <label>20 Peso Coin (Points)</label>
+                <input type="number" id="pts_20" step="0.1" placeholder="5">
+            </div>
+        </div>
+
+        <h4 style="margin-top: 25px; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
+            Redemption Promos
+            <button type="button" class="btn btn-outline" style="width: auto; padding: 6px 12px; font-size: 0.85rem;" onclick="addPromoItem()">+ Add Promo</button>
+        </h4>
+        
+        <div id="promosList" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+            </div>
+
+        <button type="button" class="btn btn-primary" onclick="savePointsConfig()">Save Points Configuration</button>
+    </div>
+
 </div>
 
 <script>
+    // --- MAIN FORM TOGGLE LOGIC ---
     function toggleState(checkboxId, inputId, statusId) {
         var checkbox = document.getElementById(checkboxId);
         var input = document.getElementById(inputId);
@@ -219,4 +267,113 @@
     function toggleSpeedInput() { toggleState('speed_toggle', 'speed_input', 'speed_status'); }
     function togglePauseInput() { toggleState('pause_toggle', 'pause_input', 'pause_status'); }
     function toggleFreeInput() { toggleState('free_toggle', 'free_input', 'free_status'); }
+
+    // --- POINTS SYSTEM LOGIC ---
+    let currentPromos = [];
+
+    function togglePointsInput() {
+        var chk = document.getElementById("pointsEnabled");
+        var st = document.getElementById("points_status");
+        if(chk.checked) {
+            st.innerText = "Enabled";
+            st.style.color = "#4f46e5";
+        } else {
+            st.innerText = "Disabled";
+            st.style.color = "#6b7280";
+        }
+    }
+
+    async function loadPointsConfig() {
+        try {
+            let res = await fetch('/admin/get_points_config');
+            let data = await res.json();
+            
+            // Set Toggle
+            let chk = document.getElementById('pointsEnabled');
+            chk.checked = data.enabled;
+            togglePointsInput();
+
+            // Map coins
+            let map = data.coin_map || {};
+            document.getElementById('pts_1').value = map["1"] || 0.5;
+            document.getElementById('pts_5').value = map["5"] || 1;
+            document.getElementById('pts_10').value = map["10"] || 3;
+            document.getElementById('pts_20').value = map["20"] || 5;
+
+            currentPromos = data.promos || [];
+            renderPromos();
+        } catch(e) { console.error(e); }
+    }
+
+    function renderPromos() {
+        const container = document.getElementById('promosList');
+        container.innerHTML = "";
+        
+        currentPromos.forEach((promo, index) => {
+            let div = document.createElement('div');
+            div.style = "display: flex; gap: 8px; align-items: center; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb;";
+            div.innerHTML = `
+                <input type="text" value="${promo.name}" onchange="updatePromo(${index}, 'name', this.value)" style="flex:2; padding:8px; border:1px solid #d1d5db; border-radius:6px;" placeholder="Promo Name">
+                <input type="number" value="${promo.cost}" onchange="updatePromo(${index}, 'cost', this.value)" style="width:80px; padding:8px; border:1px solid #d1d5db; border-radius:6px;" placeholder="Pts">
+                <input type="number" value="${promo.minutes}" onchange="updatePromo(${index}, 'minutes', this.value)" style="width:80px; padding:8px; border:1px solid #d1d5db; border-radius:6px;" placeholder="Mins">
+                <button onclick="removePromo(${index})" style="background:#ef4444; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">×</button>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function addPromoItem() {
+        currentPromos.push({ id: Date.now(), name: "New Promo", cost: 10, minutes: 60 });
+        renderPromos();
+    }
+
+    function removePromo(index) {
+        currentPromos.splice(index, 1);
+        renderPromos();
+    }
+
+    function updatePromo(index, field, value) {
+        if(field === 'cost') value = parseFloat(value);
+        if(field === 'minutes') value = parseInt(value);
+        currentPromos[index][field] = value;
+    }
+
+    async function savePointsConfig() {
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = "Saving...";
+        btn.disabled = true;
+
+        let coinMap = {
+            "1": parseFloat(document.getElementById('pts_1').value),
+            "5": parseFloat(document.getElementById('pts_5').value),
+            "10": parseFloat(document.getElementById('pts_10').value),
+            "20": parseFloat(document.getElementById('pts_20').value)
+        };
+
+        let payload = {
+            enabled: document.getElementById('pointsEnabled').checked,
+            coin_map: coinMap,
+            promos: currentPromos
+        };
+        
+        try {
+            let res = await fetch('/admin/save_points_config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            
+            if(res.ok) alert("✅ Points Configuration Saved!");
+            else alert("Error saving.");
+        } catch(e) {
+            alert("Network Error");
+        }
+        
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+
+    // Initialize
+    loadPointsConfig();
 </script>

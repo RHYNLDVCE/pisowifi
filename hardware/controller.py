@@ -37,9 +37,11 @@ def read_pin():
     except:
         return 1
 
-def wait_for_pulse():
+def wait_for_pulse(on_detected=None):
     """
-    Smart Pulse Counter (Fixed Version)
+    Smart Pulse Counter (Real-Time Feedback Version)
+    Args:
+        on_detected (function): Optional callback to run IMMEDIATELY when first pulse is found.
     """
     last_state = 1
     
@@ -47,7 +49,14 @@ def wait_for_pulse():
     while True:
         state = read_pin()
         if state == 0 and last_state == 1:
-            break # Coin detected!
+            # 🎉 FIRST PULSE DETECTED!
+            # Notify the system immediately so UI can show "Counting..."
+            if on_detected:
+                try:
+                    on_detected()
+                except Exception as e:
+                    print(f"Callback Error: {e}")
+            break 
         last_state = state
         time.sleep(0.01)
 
@@ -55,8 +64,7 @@ def wait_for_pulse():
     total_pulses = 1
     last_pulse_time = time.time()
     
-    # FIX: Update last_state to 0 (Low) because we are currently IN the first pulse.
-    # This prevents the loop below from counting the first pulse a second time.
+    # We are currently LOW (0). 
     last_state = 0 
     
     print("   -> Pulse 1 detected... Listening for train...")

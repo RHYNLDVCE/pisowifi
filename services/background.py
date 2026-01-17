@@ -3,9 +3,14 @@ import time
 import threading
 import asyncio
 import config
+import subprocess
+import datetime
 from core import database, state, utils
 from hardware import controller
 from network import firewall
+
+# --- Global Flag for Restart Logic ---
+reboot_triggered = False
 
 def start_background_tasks():
     threading.Thread(target=_coin_listener, daemon=True).start()
@@ -24,8 +29,23 @@ def send_ws_update(mac, data):
 
 def _coin_listener():
     print("💰 Coin Listener STARTED. Waiting for pulses...")
+
+    # --- CALLBACK: Runs immediately when coin drops ---
+    def notify_counting():
+        current_user = controller.current_slot_user
+        if current_user and current_user in state.users:
+            print(f"[DEBUG] ⚡ Activity detected for {current_user}. Sending 'Counting' status...")
+            # Send immediate feedback to UI
+            send_ws_update(current_user, {
+                "type": "coin_counting",
+                "status": "counting"
+            })
+    # ------------------------------------------------
+
     while True:
-        coin_value = controller.wait_for_pulse()
+        # Pass the callback to the hardware controller
+        coin_value = controller.wait_for_pulse(on_detected=notify_counting)
+        
         if coin_value > 0:
             print(f"\n[DEBUG] 🪙  COIN DETECTED! Pulses: {coin_value}")
             current_user = controller.current_slot_user
@@ -44,6 +64,11 @@ def _coin_listener():
                     state.users[current_user]["balance"] = 0
                 
                 state.users[current_user]["balance"] += coin_value
+                
+                # NOTE: We do NOT add points here anymore. 
+                # Points are now calculated using the Greedy Algorithm in routers/client.py 
+                # when the user clicks "Connect" to ensure the best rate for the total amount.
+
                 state.users[current_user]["last_active"] = time.time()
                 
                 user_data = state.users[current_user]
@@ -53,6 +78,7 @@ def _coin_listener():
                 payload = {
                     "type": "coin_inserted",
                     "balance": state.users[current_user]["balance"],
+                    "points": state.users[current_user].get("points", 0), # Send current points (unchanged)
                     "slot_seconds": state.config["slot_timeout"],
                     "pulse_value": state.config.get("pulse_value", 5)
                 }
@@ -63,10 +89,44 @@ def _coin_listener():
             print("[DEBUG]    Received 0 pulses (Noise?)")
 
 def _time_manager():
+    global reboot_triggered
     ticks = 0
+    print("⏰ Time Manager & Scheduler Started...")
+
     while True:
         time.sleep(1) 
         ticks += 1
+        
+        # --- Scheduled Restart Logic ---
+        # Check every 5 seconds
+        if ticks % 5 == 0:
+            schedule = state.config.get("restart_schedule", {"enabled": False})
+            
+            if schedule.get("enabled"):
+                now = datetime.datetime.now()
+                current_time = now.strftime("%H:%M")
+                target_time = schedule.get("time", "03:00")
+
+                # If times match and we haven't rebooted yet today
+                if current_time == target_time and not reboot_triggered:
+                    print(f"🔄 Scheduled Restart Triggered at {current_time}")
+                    reboot_triggered = True # Lock it so we don't loop
+                    
+                    # Notify all active users
+                    for mac in list(state.users.keys()):
+                        send_ws_update(mac, {"type": "system_message", "message": "System is restarting for maintenance..."})
+                    
+                    # Wait 3 seconds then reboot
+                    time.sleep(3)
+                    try:
+                        subprocess.run(["sudo", "reboot"])
+                    except Exception as e:
+                        print(f"❌ Reboot failed: {e}")
+
+                # Reset the trigger once the minute passes (so it can work tomorrow)
+                if current_time != target_time:
+                    reboot_triggered = False
+        # ------------------------------------
         
         for mac, data in list(state.users.items()):
             if data["status"] == "connected" and data["time"] > 0:
@@ -86,7 +146,8 @@ def _time_manager():
                         "type": "sync",
                         "time_remaining": data["time"],
                         "status": data["status"],
-                        "balance": data.get("balance", 0)
+                        "balance": data.get("balance", 0),
+                        "points": data.get("points", 0)
                     }
                     send_ws_update(mac, payload)
 
