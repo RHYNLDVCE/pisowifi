@@ -157,3 +157,12 @@ def get_sales_since(timestamp_start):
     total = c.fetchone()[0]
     conn.close()
     return total if total else 0
+
+def get_sales_range(start_ts, end_ts):
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    # Fetch sum of amounts where timestamp is between start (inclusive) and end (exclusive)
+    c.execute("SELECT SUM(amount) FROM sales WHERE timestamp >= ? AND timestamp < ?", (start_ts, end_ts))
+    total = c.fetchone()[0]
+    conn.close()
+    return total if total else 0

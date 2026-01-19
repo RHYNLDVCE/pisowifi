@@ -73,7 +73,8 @@ def calculate_points_from_balance(balance):
             total_points += count * val
             rem_balance %= denom
             
-    return total_points
+    # --- UPDATE: Round to 2 decimal places ---
+    return round(total_points, 2)
 
 # --- WEBSOCKET ROUTE ---
 @router.websocket("/ws/{mac}")
@@ -245,7 +246,9 @@ async def start_internet(mac: str):
             if state.config.get("points_enabled", False):
                 earned_points = calculate_points_from_balance(balance)
                 if "points" not in user: user["points"] = 0
-                user["points"] += earned_points
+                
+                # --- UPDATE: Round existing + new points to 2 decimals ---
+                user["points"] = round(user["points"] + earned_points, 2)
             
             # 3. Reset Balance
             user["balance"] = 0 
@@ -386,8 +389,9 @@ async def redeem_points(data: dict, request: Request):
     if user["points"] < target_promo["cost"]:
         return {"status": "error", "message": "Not enough points"}
         
-    # EXECUTE REDEEM
-    user["points"] -= target_promo["cost"]
+    # --- UPDATE: Execute redeem (Round subtraction to 2 decimals) ---
+    user["points"] = round(user["points"] - target_promo["cost"], 2)
+    
     # Convert minutes to seconds
     added_time = target_promo["minutes"] * 60
     user["time"] += added_time

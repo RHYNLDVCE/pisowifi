@@ -2,7 +2,7 @@
     /* --- UNIFIED FORM STYLES --- */
     .input-group input, 
     .toggle-wrapper {
-        height: 48px; /* Fixed identical height */
+        height: 48px; 
         width: 100%;
         border: 1px solid #d1d5db; 
         border-radius: 8px; 
@@ -11,27 +11,24 @@
         background: #ffffff;
     }
 
-    /* Text Input Specifics */
     .input-group input {
         padding: 0 15px;
         color: #1f2937;
     }
 
-    /* Toggle Container Specifics */
     .toggle-wrapper {
         display: flex;
-        align-items: center; /* Critical for vertical centering */
+        align-items: center; 
         justify-content: space-between; 
         padding: 0 15px;
         background: #f9fafb;
     }
 
-    /* Toggle Status Text */
     .toggle-status {
         font-weight: 600;
         font-size: 0.9rem;
         color: #4b5563;
-        line-height: 1; /* Prevents text line-height from offsetting alignment */
+        line-height: 1; 
     }
 
     /* Switch Label */
@@ -40,12 +37,11 @@
         display: inline-block;
         width: 44px;
         height: 24px;
-        margin: 0; /* Removes any browser default margins */
+        margin: 0; 
         flex-shrink: 0;
-        vertical-align: middle; /* fallback */
+        vertical-align: middle; 
     }
 
-    /* Hide Checkbox completely from layout flow */
     .switch input { 
         position: absolute; 
         opacity: 0; 
@@ -54,7 +50,6 @@
         margin: 0;
     }
 
-    /* The Slider Track */
     .slider {
         position: absolute;
         cursor: pointer;
@@ -64,7 +59,6 @@
         border-radius: 34px;
     }
 
-    /* The Slider Circle */
     .slider:before {
         position: absolute;
         content: "";
@@ -80,6 +74,104 @@
 
     input:checked + .slider { background-color: #4f46e5; }
     input:checked + .slider:before { transform: translateX(20px); }
+
+    /* --- RESPONSIVE GRID FOR SETTINGS --- */
+    .settings-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr; 
+        gap: 15px;
+    }
+
+    /* --- PROMO ITEM STYLES --- */
+    .promo-item {
+        display: flex;
+        gap: 15px; /* Increased gap for better spacing */
+        align-items: flex-end; /* Aligns inputs to bottom so labels don't offset buttons */
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        transition: background 0.2s;
+    }
+    
+    .promo-label {
+        font-size: 0.75rem;
+        color: #6b7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+        display: block;
+        letter-spacing: 0.05em;
+    }
+
+    .promo-input-name {
+        width: 100%;
+        padding: 8px 12px; 
+        border: 1px solid #d1d5db; 
+        border-radius: 6px;
+        font-size: 0.95rem;
+    }
+
+    .promo-stats-row {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end; /* Align inputs and button at the bottom */
+    }
+
+    .promo-input-small {
+        width: 80px; 
+        padding: 8px; 
+        border: 1px solid #d1d5db; 
+        border-radius: 6px;
+        text-align: center;
+        font-size: 0.95rem;
+    }
+
+    .btn-delete {
+        background: #fee2e2; 
+        color: #ef4444; 
+        border: 1px solid #fecaca; 
+        width: 38px; /* Slightly larger for easier tapping */
+        height: 38px;
+        border-radius: 6px; 
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+        transition: all 0.2s;
+    }
+    .btn-delete:hover { background: #fecaca; }
+
+    /* --- MOBILE MEDIA QUERY (Max-width 768px) --- */
+    @media (max-width: 768px) {
+        .settings-grid {
+            grid-template-columns: 1fr !important; 
+        }
+        
+        .settings-grid > [style*="grid-column: span 2"] {
+            grid-column: span 1 !important;
+        }
+
+        /* Promo Item Mobile Layout */
+        .promo-item {
+            flex-direction: column; 
+            align-items: stretch;
+            gap: 15px;
+        }
+
+        .promo-stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto; /* Points | Time | Delete */
+            width: 100%;
+            gap: 10px;
+        }
+
+        .promo-input-small {
+            width: 100%; 
+        }
+    }
 </style>
 
 <div id="features" class="section">
@@ -305,18 +397,54 @@
         } catch(e) { console.error(e); }
     }
 
+    // --- UPDATED RENDER FUNCTION WITH LABELS ---
     function renderPromos() {
         const container = document.getElementById('promosList');
         container.innerHTML = "";
         
         currentPromos.forEach((promo, index) => {
             let div = document.createElement('div');
-            div.style = "display: flex; gap: 8px; align-items: center; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb;";
+            div.className = "promo-item"; 
+            
             div.innerHTML = `
-                <input type="text" value="${promo.name}" onchange="updatePromo(${index}, 'name', this.value)" style="flex:2; padding:8px; border:1px solid #d1d5db; border-radius:6px;" placeholder="Promo Name">
-                <input type="number" value="${promo.cost}" onchange="updatePromo(${index}, 'cost', this.value)" style="width:80px; padding:8px; border:1px solid #d1d5db; border-radius:6px;" placeholder="Pts">
-                <input type="number" value="${promo.minutes}" onchange="updatePromo(${index}, 'minutes', this.value)" style="width:80px; padding:8px; border:1px solid #d1d5db; border-radius:6px;" placeholder="Mins">
-                <button onclick="removePromo(${index})" style="background:#ef4444; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">×</button>
+                <div style="flex: 2; min-width: 0;">
+                    <label class="promo-label">Promo Title</label>
+                    <input type="text" 
+                           class="promo-input-name" 
+                           value="${promo.name}" 
+                           onchange="updatePromo(${index}, 'name', this.value)" 
+                           placeholder="e.g. 1 Hour Special">
+                </div>
+                
+                <div class="promo-stats-row">
+                    <div>
+                        <label class="promo-label">Points</label>
+                        <input type="number" 
+                               class="promo-input-small" 
+                               value="${promo.cost}" 
+                               onchange="updatePromo(${index}, 'cost', this.value)" 
+                               placeholder="0">
+                    </div>
+                           
+                    <div>
+                        <label class="promo-label">Time (Mins)</label>
+                        <input type="number" 
+                               class="promo-input-small" 
+                               value="${promo.minutes}" 
+                               onchange="updatePromo(${index}, 'minutes', this.value)" 
+                               placeholder="0">
+                    </div>
+                           
+                    <div>
+                        <label class="promo-label" style="opacity: 0;">Del</label>
+                        <button type="button" 
+                                class="btn-delete" 
+                                onclick="removePromo(${index})"
+                                title="Remove Promo">
+                            ×
+                        </button>
+                    </div>
+                </div>
             `;
             container.appendChild(div);
         });

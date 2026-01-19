@@ -163,9 +163,12 @@ async def admin_panel(
     ts_month = start_of_month.timestamp()
     start_of_year = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
     ts_year = start_of_year.timestamp()
+    start_of_yesterday = start_of_day - timedelta(days=1)
+    ts_yesterday_start = start_of_yesterday.timestamp()
 
     stats = {
         "total": database.get_total_sales(),
+        "yesterday": database.get_sales_range(ts_yesterday_start, ts_day),
         "daily": database.get_sales_since(ts_day),
         "weekly": database.get_sales_since(ts_week),
         "monthly": database.get_sales_since(ts_month),
