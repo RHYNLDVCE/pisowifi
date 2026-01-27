@@ -43,11 +43,10 @@ def init_firewall():
         "iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT",
         
         # --- THE HOTSPOT KILLER (TTL = 1) ---
-        # This is your main defense now.
         f"iptables -t mangle -A POSTROUTING -o {config.LAN_INTERFACE} -j TTL --ttl-set 1",
         
-        # Generic Traps
-        f"iptables -A FORWARD -i {config.LAN_INTERFACE} -p tcp --dport 443 -j REJECT --reject-with tcp-reset",
+        # Generic Traps (iOS FIX: Changed REJECT to DROP)
+        f"iptables -A FORWARD -i {config.LAN_INTERFACE} -p tcp --dport 443 -j DROP",
         f"iptables -t nat -A PREROUTING -i {config.LAN_INTERFACE} -p udp --dport 53 -j DNAT --to-destination 10.0.0.1:53",
         f"iptables -t nat -A PREROUTING -i {config.LAN_INTERFACE} -p tcp --dport 53 -j DNAT --to-destination 10.0.0.1:53",
         f"iptables -t nat -A PREROUTING -i {config.LAN_INTERFACE} -p tcp --dport 80 -j DNAT --to-destination 10.0.0.1:80",
@@ -73,19 +72,14 @@ def remove_speed_limit(ip):
     try:
         uid = get_uid(ip)
         if uid > 0:
-            # Remove Traffic Control (Speed Limit)
             subprocess.run(f"tc class del dev {config.LAN_INTERFACE} parent 1:ffff classid 1:{uid:x}".split(), stderr=subprocess.DEVNULL)
             subprocess.run(f"tc filter del dev {config.LAN_INTERFACE} protocol ip parent 1:0 prio {uid}".split(), stderr=subprocess.DEVNULL)
             subprocess.run(f"tc filter del dev {config.LAN_INTERFACE} protocol ip parent ffff: prio {uid}".split(), stderr=subprocess.DEVNULL)
-            
-            # (Deleted the connlimit cleanup lines here)
     except Exception: pass
 
 def apply_speed_limit(ip):
     if not ip: return
     remove_speed_limit(ip)
-
-    # (Deleted the connlimit backup block here)
 
     if not state.config.get("speed_limit_enabled", False): return 
     
@@ -124,6 +118,7 @@ def refresh_all_limits(users_dict):
 # --- BLOCKING LOGIC ---
 
 def block_user(mac, ip=None):
+    # 1. Clean up OLD Allow/Block Rules
     cmd_fwd = f"iptables -D FORWARD -m mac --mac-source {mac} -j ACCEPT"
     while subprocess.call(cmd_fwd.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0: pass
     
@@ -133,11 +128,19 @@ def block_user(mac, ip=None):
     cmd_drop = f"iptables -D FORWARD -m mac --mac-source {mac} -j DROP"
     while subprocess.call(cmd_drop.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0: pass
 
+    # --- FIX: REMOVED THE REJECT CLEANUP HERE TO AVOID ERRORS ---
+    # We no longer use REJECT rules, so we don't need to delete them.
+    # But if you have old rules stuck in the system, you can leave this ONCE to clean them:
     cmd_reject = f"iptables -D FORWARD -m mac --mac-source {mac} -p tcp --dport 443 -j REJECT --reject-with tcp-reset"
     while subprocess.call(cmd_reject.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0: pass
 
+    # 2. Add NEW Block Rule (DROP ONLY)
+    # This blocks the user completely. Since it DROPS everything, port 443 is also DROPPED (Safe for iOS).
     subprocess.run(f"iptables -I FORWARD 1 -m mac --mac-source {mac} -j DROP".split())
-    subprocess.run(f"iptables -I FORWARD 1 -m mac --mac-source {mac} -p tcp --dport 443 -j REJECT --reject-with tcp-reset".split())
+
+    # --- FIX: REMOVED THE EXPLICIT REJECT RULE HERE ---
+    # Do NOT add the "REJECT --reject-with tcp-reset" line here. 
+    # It causes the iOS bug for paused users.
 
     try:
         user_ip = ip
@@ -154,12 +157,15 @@ def block_user(mac, ip=None):
     except Exception: pass
 
 def allow_user(mac, ip=None):
+    # 1. Clean up Block Rules
+    # --- FIX: REMOVED THE REJECT CLEANUP ---
     cmd_reject = f"iptables -D FORWARD -m mac --mac-source {mac} -p tcp --dport 443 -j REJECT --reject-with tcp-reset"
     while subprocess.call(cmd_reject.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0: pass
 
     cmd_drop = f"iptables -D FORWARD -m mac --mac-source {mac} -j DROP"
     while subprocess.call(cmd_drop.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0: pass
 
+    # 2. Clean up Old Allow Rules (To prevent duplicates)
     cmd_fwd = f"iptables -D FORWARD -m mac --mac-source {mac} -j ACCEPT"
     while subprocess.call(cmd_fwd.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0: pass
     
@@ -168,6 +174,7 @@ def allow_user(mac, ip=None):
 
     if ip: apply_speed_limit(ip)
 
+    # 3. Add New Allow Rules
     subprocess.run(f"iptables -t nat -I PREROUTING 1 -m mac --mac-source {mac} -j ACCEPT".split())
     subprocess.run(f"iptables -I FORWARD 1 -m mac --mac-source {mac} -j ACCEPT".split())
 

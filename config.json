@@ -1,7 +1,7 @@
 {
-    "slot_timeout": 50,
-    "slot_expiry_timestamp": 0,
-    "inactive_timeout": 120,
+    "slot_timeout": 40,
+    "slot_expiry_timestamp": 1769297091.72194,
+    "inactive_timeout": 300,
     "auto_pause_enabled": true,
     "speed_limit_enabled": true,
     "global_speed_limit": 15,
@@ -10,22 +10,22 @@
     "coin_rates": "1:12,5:70,10:181,20:481",
     "pulse_value": 5,
     "restart_schedule": {
-        "enabled": true,
-        "time": "03:00"
+        "enabled": false,
+        "time": "03:15"
     },
     "points_enabled": true,
     "coin_point_map": {
-        "1": 0.25,
-        "5": 1.5,
-        "10": 3.5,
-        "20": 8.0
+        "1": 0.0,
+        "5": 1.0,
+        "10": 2.0,
+        "20": 4.0
     },
     "point_promos": [
         {
             "id": 1,
-            "name": "1hr 30mins",
+            "name": "1hour",
             "cost": 20.0,
-            "minutes": 90
+            "minutes": 60
         },
         {
             "id": 1768609763541,
