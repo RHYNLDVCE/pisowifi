@@ -234,13 +234,27 @@
                         
                         <td>
                             {% if user.time > 0 %}
-                                {% set hours = (user.time // 3600) | int %}
-                                {% set minutes = ((user.time % 3600) // 60) | int %}
-                                {% set seconds = (user.time % 60) | int %}
+                                {% set t = user.time %}
+                                {% set y = (t // 31536000) | int %}
+                                {% set mo = ((t % 31536000) // 2592000) | int %}
+                                {% set d = ((t % 2592000) // 86400) | int %}
+                                {% set h = ((t % 86400) // 3600) | int %}
+                                {% set m = ((t % 3600) // 60) | int %}
+                                {% set s = (t % 60) | int %}
+                                
                                 <span style="font-weight:bold; color:#059669;">
-                                    {% if hours > 0 %} {{ hours }}h {{ minutes }}m
-                                    {% elif minutes > 0 %} {{ minutes }}m {{ seconds }}s
-                                    {% else %} {{ seconds }}s {% endif %}
+                                    {% if y > 0 %}{{ y }}y {% endif %}
+                                    {% if mo > 0 %}{{ mo }}mo {% endif %}
+                                    {% if d > 0 %}{{ d }}d {% endif %}
+                                    {% if y == 0 and mo == 0 and d == 0 %}
+                                        {# Standard H:M:S for short times #}
+                                        {% if h > 0 %}{{ h }}h {% endif %}
+                                        {% if m > 0 %}{{ m }}m {% endif %}
+                                        {{ s }}s
+                                    {% else %}
+                                        {# For long times, show H:M but maybe skip S to save space #}
+                                        {{ h }}h {{ m }}m
+                                    {% endif %}
                                 </span>
                             {% else %}
                                 <span style="color:#9ca3af;">0s</span>

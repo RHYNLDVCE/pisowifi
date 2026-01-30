@@ -1,6 +1,6 @@
 {
     "slot_timeout": 40,
-    "slot_expiry_timestamp": 1769297091.72194,
+    "slot_expiry_timestamp": 0,
     "inactive_timeout": 300,
     "auto_pause_enabled": true,
     "speed_limit_enabled": true,
@@ -10,8 +10,8 @@
     "coin_rates": "1:12,5:70,10:181,20:481",
     "pulse_value": 5,
     "restart_schedule": {
-        "enabled": false,
-        "time": "03:15"
+        "enabled": true,
+        "time": "03:00"
     },
     "points_enabled": true,
     "coin_point_map": {
@@ -38,7 +38,8 @@
     "banner_text": "Open JellyFin",
     "banner_link": "http://192.168.0.166:8096/",
     "banner_order": [
-        "MLBB-Sora2-1125x633.jpg"
+        "MLBB-Sora2-1125x633.jpg",
+        "Screenshot From 2026-01-31 06-55-45.png"
     ],
     "free_time_enabled": false,
     "free_time_duration": 0,

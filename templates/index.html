@@ -3,6 +3,7 @@
 {% block title %}REYES Starlink PisoWifi{% endblock %}
 
 {% block styles %}
+
 <style>
     :root {
         --primary: #6366f1;
@@ -18,160 +19,474 @@
         --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     }
 
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    
-    body { 
-        background-color: var(--bg-color); 
-        color: var(--text-main); 
-        min-height: 100vh; 
-        display: flex; 
+    * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        min-height: 100vh;
+        display: flex;
         flex-direction: column;
         align-items: center;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        overflow-x: hidden;
+        /* PREVENTS HORIZONTAL SCROLLING */
     }
 
-    .main-wrapper { 
-        width: 100%; 
-        max-width: 480px; 
-        min-height: 100vh; 
-        display: flex; 
-        flex-direction: column; 
+    .main-wrapper {
+        width: 100%;
+        max-width: 480px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
         background: var(--bg-color);
         position: relative;
+        overflow-x: hidden;
     }
 
-    /* HEADER & CAROUSEL */
+    /* --- HEADER & CAROUSEL (STRICT FIX) --- */
     .header {
         position: relative;
-        height: 200px; 
+        height: 200px;
+        width: 100%;
+        /* CRITICAL: Hides the slides that are waiting off-screen */
         overflow: hidden;
         border-bottom-left-radius: 15px;
         border-bottom-right-radius: 15px;
         box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
-        background: #333; 
+        background: #333;
+        z-index: 1;
     }
 
-    /* Images */
+    /* The "Film Strip" Container */
+    #bannerWrapper {
+        display: flex;
+        flex-direction: row;
+        /* Force horizontal row */
+        flex-wrap: nowrap;
+        /* CRITICAL: Never wrap to next line */
+        width: 100%;
+        height: 100%;
+        transition: transform 0.5s ease-in-out;
+        /* Smooth sliding */
+        will-change: transform;
+        box-sizing: border-box;
+    }
+
+    /* Individual Images */
     .carousel-slide {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        object-fit: cover;
-        opacity: 0;
-        transition: opacity 1s ease-in-out;
-        z-index: 0;
-    }
-    .carousel-slide.active { opacity: 1; }
+        /* CRITICAL: Force every image to be exactly 100% of the viewport width */
+        flex: 0 0 100%;
+        width: 100%;
+        max-width: 100%;
 
-    /* Overlay Content */
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        margin: 0;
+        padding: 0;
+        border: none;
+    }
+
     .header-content {
         position: absolute;
-        bottom: 0; left: 0; width: 100%;
-        padding: 20px 20px 25px; 
-        background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 60%, transparent 100%);
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 20px 20px 25px;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.5) 60%, transparent 100%);
         z-index: 10;
         text-align: center;
         color: white;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 8px; 
+        gap: 8px;
+        pointer-events: none;
+        /* Lets clicks pass through to image if needed */
     }
 
-    .header-content h2 { margin: 0; font-weight: 800; font-size: 1.8rem; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-    .header-content p { margin: 0; opacity: 0.95; font-size: 0.95rem; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+    .header-content h2 {
+        margin: 0;
+        font-weight: 800;
+        font-size: 1.8rem;
+        letter-spacing: -0.5px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
 
-    /* STATUS BADGE */
-    .status-badge { 
-        display: inline-flex; 
-        align-items: center; 
+    .header-content p {
+        margin: 0;
+        opacity: 0.95;
+        font-size: 0.95rem;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
         gap: 6px;
-        background: rgba(255,255,255,0.2); 
+        background: rgba(255, 255, 255, 0.2);
         backdrop-filter: blur(5px);
-        padding: 6px 16px; 
-        border-radius: 99px; 
-        font-size: 0.75rem; 
-        font-weight: 700; 
+        padding: 6px 16px;
+        border-radius: 99px;
+        font-size: 0.75rem;
+        font-weight: 700;
         margin-top: 0;
         letter-spacing: 0.5px;
         text-transform: uppercase;
-        border: 1px solid rgba(255,255,255,0.3);
+        border: 1px solid rgba(255, 255, 255, 0.3);
     }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 5px rgba(255,255,255,0.8); }
 
-    /* TIMER CARD */
-    .timer-card { 
-        background: var(--card-bg); 
-        margin: -20px 20px 0; 
-        padding: 25px 20px; 
-        border-radius: 12px; 
-        box-shadow: var(--shadow); 
-        text-align: center; 
-        position: relative; 
-        z-index: 20; 
+    .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
     }
-    .timer-label { color: var(--text-sub); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-    .timer-display { font-size: 3.8rem; font-weight: 800; margin: 5px 0; line-height: 1; color: var(--text-main); font-variant-numeric: tabular-nums; }
-    
-    .conn-status { font-size: 0.9rem; color: var(--text-sub); margin-bottom: 15px; font-weight: 500; }
 
-    /* INFO ROWS */
-    .info-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #f1f5f9; }
-    .info-row { display: flex; justify-content: center; gap: 15px; font-size: 0.75rem; color: var(--text-sub); font-family: monospace; margin-bottom: 4px; }
+    /* --- COMPACT CARD FIXED STYLE --- */
+    .timer-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        text-align: center;
+        position: relative;
+        z-index: 20;
 
-    /* ACTION BUTTONS */
-    .actions { padding: 30px 20px; display: flex; flex-direction: column; gap: 12px; flex-grow: 1; width: 100%; }
-    
-    .btn { border: none; width: 100%; padding: 16px; border-radius: 8px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-    .btn:active { transform: scale(0.98); }
-    .btn-main { background: var(--text-main); color: white; }
-    .btn-insert { background: var(--success); color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
-    .btn-resume { background: var(--warning); color: white; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
-    .btn-pause { background: var(--danger); color: white; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); }
-    .btn-outline { background: white; border: 2px solid #e2e8f0; color: var(--text-sub); box-shadow: none; font-size: 0.95rem; }
-    .btn-disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; box-shadow: none; }
+        /* FIXED DIMENSIONS */
+        margin: -20px 20px 0 20px !important;
+        width: calc(100% - 40px) !important;
+        height: 180px !important;
+        min-height: 180px !important;
+        max-height: 180px !important;
 
-    /* MODAL */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
-    .modal-card { background: white; width: 90%; max-width: 340px; border-radius: 12px; padding: 30px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideUp 0.3s ease-out; }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    
-    .pulse-animation { animation: pulse 2s infinite; }
-    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        /* LOCK CONTENT */
+        min-width: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        padding: 15px 20px !important;
+        box-sizing: border-box !important;
+    }
 
-    .coin-circle { width: 80px; height: 80px; background: #fef3c7; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: #d97706; border: 4px solid white; box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.2); }
-    .progress-track { width: 100%; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; margin: 20px 0; }
-    .progress-fill { height: 100%; background: var(--primary); width: 100%; transition: width 1s linear; }
-    
-    /* Stats Box */
-    .stats-box { background: #f8fafc; border-radius: 6px; padding: 0; margin-bottom: 20px; border: 1px solid #e2e8f0; text-align: left; }
-    .stat-row { padding: 15px; display: flex; align-items: center; gap: 10px; color: var(--text-main); font-size: 1.1rem; }
-    .stat-row.border-bottom { border-bottom: 1px solid #e2e8f0; }
-    .stat-value { font-weight: 700; margin-left: auto; }
+    .timer-display {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--text-main);
+        font-variant-numeric: tabular-nums;
 
-    /* TOAST */
-    .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-    .toast { background: rgba(30, 41, 59, 0.95); color: white; padding: 14px 24px; border-radius: 50px; font-size: 0.95rem; font-weight: 500; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2); display: flex; align-items: center; gap: 10px; animation: toastSlideUp 0.3s; min-width: 280px; justify-content: center; backdrop-filter: blur(4px); }
-    .toast.error { background: rgba(220, 38, 38, 0.95); }
-    .toast.success { background: rgba(5, 150, 105, 0.95); }
-    @keyframes toastSlideUp { from { transform: translateY(40px) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+        /* CONTAINER LOCK */
+        height: 60px !important;
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
 
+        /* TEXT LOCK */
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: clip !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* ALIGN TO BOTTOM */
+    .unit-small {
+        font-size: 0.65em;
+        margin-left: 1px;
+        margin-right: 5px;
+        color: var(--text-sub);
+        vertical-align: baseline;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+
+    .timer-label {
+        color: var(--text-sub);
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 5px;
+    }
+
+    .conn-status {
+        font-size: 0.9rem;
+        color: var(--text-sub);
+        font-weight: 500;
+        height: 20px;
+        margin-bottom: 0;
+    }
+
+    .info-section {
+        margin-top: auto;
+        padding-top: 8px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        font-size: 0.75rem;
+        color: var(--text-sub);
+        font-family: monospace;
+        margin-bottom: 2px;
+        flex-wrap: wrap;
+    }
+
+    /* COMPACT ACTIONS */
+    .actions {
+        padding: 15px 20px 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex-grow: 1;
+        width: 100%;
+    }
+
+    .btn {
+        border: none;
+        width: 100%;
+        max-width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn:active {
+        transform: scale(0.98);
+    }
+
+    .btn-main {
+        background: var(--text-main);
+        color: white;
+    }
+
+    .btn-insert {
+        background: var(--success);
+        color: white;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-resume {
+        background: var(--warning);
+        color: white;
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-pause {
+        background: var(--danger);
+        color: white;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-outline {
+        background: white;
+        border: 2px solid #e2e8f0;
+        color: var(--text-sub);
+        box-shadow: none;
+        font-size: 0.95rem;
+    }
+
+    .btn-disabled {
+        background: #cbd5e1;
+        color: #94a3b8;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.85);
+        z-index: 1000;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(8px);
+    }
+
+    .modal-card {
+        background: white;
+        width: 90%;
+        max-width: 340px;
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .coin-circle {
+        width: 80px;
+        height: 80px;
+        background: #fef3c7;
+        border-radius: 50%;
+        margin: 0 auto 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: #d97706;
+        border: 4px solid white;
+        box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.2);
+    }
+
+    .progress-track {
+        width: 100%;
+        height: 8px;
+        background: #f1f5f9;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 20px 0;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: var(--primary);
+        width: 100%;
+        transition: width 1s linear;
+    }
+
+    .stats-box {
+        background: #f8fafc;
+        border-radius: 6px;
+        padding: 0;
+        margin-bottom: 20px;
+        border: 1px solid #e2e8f0;
+        text-align: left;
+    }
+
+    .stat-row {
+        padding: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-main);
+        font-size: 1.1rem;
+    }
+
+    .stat-row.border-bottom {
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .stat-value {
+        font-weight: 700;
+        margin-left: auto;
+    }
+
+    .toast-container {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+    }
+
+    .toast {
+        background: rgba(30, 41, 59, 0.95);
+        color: white;
+        padding: 14px 24px;
+        border-radius: 50px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: toastSlideUp 0.3s;
+        min-width: 280px;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+    }
+
+    .toast.error {
+        background: rgba(220, 38, 38, 0.95);
+    }
+
+    .toast.success {
+        background: rgba(5, 150, 105, 0.95);
+    }
+
+    @keyframes toastSlideUp {
+        from {
+            transform: translateY(40px) scale(0.9);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="main-wrapper">
     <div id="appHeader" class="header">
-        
+
         <div id="bannerWrapper">
             {% for banner in banners %}
-                <img src="{{ banner }}" class="carousel-slide {% if loop.first %}active{% endif %}">
+            <img src="{{ banner }}" class="carousel-slide">
             {% endfor %}
         </div>
 
         <div class="header-content">
             <h2>REYES STARLINK PISOWIFI</h2>
             <p>Premium Internet Connectivity</p>
-            
+
             <div id="statusBadgeContainer" class="status-badge">
                 <span class="dot"></span> <span id="statusBadge">CONNECTING...</span>
             </div>
@@ -182,7 +497,7 @@
         <div class="timer-label">Time Remaining</div>
         <div id="timeDisplay" class="timer-display">--:--</div>
         <div id="connectionStatus" class="conn-status">Checking Status...</div>
-        
+
         <div class="info-section">
             <div class="info-row">
                 <span>Coin Balance: <b id="balanceDisplay">0</b></span>
@@ -213,26 +528,30 @@
         </button>
 
         {% if points_enabled %}
-        <button id="btnRewards" class="btn" style="background: #0b61f5; color: white; margin-top: 5px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);" onclick="window.location.href='/rewards'">
+        <button id="btnRewards" class="btn"
+            style="background: #0b61f5; color: white; margin-top: 5px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);"
+            onclick="window.location.href='/rewards'">
             Loyalty Points
         </button>
         {% endif %}
 
         {% if free_time_enabled and not free_claimed %}
-        <button id="btnFree" class="btn" style="background: #8b5cf6; color: white; margin-top: 5px;" onclick="claimFreeTime()">
+        <button id="btnFree" class="btn" style="background: #8b5cf6; color: white; margin-top: 5px;"
+            onclick="claimFreeTime()">
             {% if free_duration >= 60 %}
-                {% set f_hours = (free_duration // 60) %}
-                {% set f_mins = (free_duration % 60) %}
-                🎁 Claim Free {{ "%d:%02d"|format(f_hours, f_mins) }} Hours
+            {% set f_hours = (free_duration // 60) %}
+            {% set f_mins = (free_duration % 60) %}
+            🎁 Claim Free {{ "%d:%02d"|format(f_hours, f_mins) }} Hours
             {% else %}
-                🎁 Claim Free {{ free_duration }} Mins
+            🎁 Claim Free {{ free_duration }} Mins
             {% endif %}
         </button>
         {% endif %}
 
         {% if banner_text %}
         <div style="text-align: center; margin-top: 15px;">
-            <a href="{{ banner_link }}" target="_blank" style="color: var(--text-sub); text-decoration: none; font-size: 0.95rem; font-weight: 500; border-bottom: 1px dotted var(--text-sub);">
+            <a href="{{ banner_link }}" target="_blank"
+                style="color: var(--text-sub); text-decoration: none; font-size: 0.95rem; font-weight: 500; border-bottom: 1px dotted var(--text-sub);">
                 {{ banner_text }}
             </a>
         </div>
@@ -244,8 +563,9 @@
     <div class="modal-card">
         <div class="coin-circle pulse-animation">🪙</div>
         <h3 style="margin: 0 0 5px;">Insert Coins Now</h3>
-        <p style="margin: 0; color: var(--text-sub); font-size: 0.9rem;">Slot closes in <b id="slotSeconds" style="color:var(--primary);">--</b>s</p>
-        
+        <p style="margin: 0; color: var(--text-sub); font-size: 0.9rem;">Slot closes in <b id="slotSeconds"
+                style="color:var(--primary);">--</b>s</p>
+
         <div class="progress-track">
             <div id="slotProgressBar" class="progress-fill"></div>
         </div>
@@ -259,7 +579,7 @@
                 <span class="stat-label">Total Amount:</span>
                 <span id="modalAmountVal" class="stat-value">00</span>
             </div>
-            
+
             {% if points_enabled %}
             <div class="stat-row">
                 <span class="stat-label">Points Earned:</span>
@@ -276,14 +596,16 @@
     <div class="modal-card">
         <h3 style="margin-bottom: 20px;">Rates</h3>
         <div id="ratesList" class="stats-box" style="padding: 0; overflow: hidden;">
-            </div>
+        </div>
         <button class="btn btn-main" onclick="document.getElementById('ratesModal').style.display='none'">Close</button>
     </div>
 </div>
 
 <div id="confirmModal" class="modal-overlay">
     <div class="modal-card">
-        <div class="coin-circle" style="background:#e0e7ff; color:#4f46e5; border-color:white; box-shadow:0 10px 15px -3px rgba(79, 70, 229, 0.2);">🎁</div>
+        <div class="coin-circle"
+            style="background:#e0e7ff; color:#4f46e5; border-color:white; box-shadow:0 10px 15px -3px rgba(79, 70, 229, 0.2);">
+            🎁</div>
         <h3 style="margin: 0 0 10px;">Claim Free Time?</h3>
         <p style="margin-bottom: 25px; color: var(--text-sub); font-size: 0.9rem;">
             You are about to activate your free trial. <br>Do you want to proceed?
@@ -297,7 +619,9 @@
 
 <div id="successModal" class="modal-overlay">
     <div class="modal-card">
-        <div class="coin-circle" style="background:#d1fae5; color:#059669; border-color:white; box-shadow:0 10px 15px -3px rgba(5, 150, 105, 0.2);">🎉</div>
+        <div class="coin-circle"
+            style="background:#d1fae5; color:#059669; border-color:white; box-shadow:0 10px 15px -3px rgba(5, 150, 105, 0.2);">
+            🎉</div>
         <h3 style="margin: 0 0 10px;">Congratulations!</h3>
         <p style="margin-bottom: 25px; color: var(--text-sub);">
             You have successfully claimed your free time.
@@ -312,46 +636,51 @@
 {% block scripts %}
 <script>
     var mac = "{{ mac }}";
-    var ratesStr = "{{ coin_rates }}"; 
-    
-    // --- INITIALIZE POINTS DATA ---
+    var ratesStr = "{{ coin_rates }}";
     var pointMap = JSON.parse('{{ coin_point_map | tojson | safe }}');
     var pointsEnabled = JSON.parse('{{ points_enabled | tojson | safe }}');
-    
+
     // --- UI SETUP ---
     var badChar = String.fromCharCode(123);
     if (!mac || mac.startsWith("None") || mac.startsWith(badChar)) mac = "Unknown";
     document.getElementById("macDisplay").innerText = mac;
     document.getElementById("ipDisplay").innerText = "{{ ip }}";
 
-    // --- SOUND SYSTEM ---
     var audioInsert = new Audio("{{ sound_insert_url }}");
-    audioInsert.loop = true; 
+    audioInsert.loop = true;
     var audioCoin = new Audio("{{ sound_coin_url }}");
 
-    // --- CAROUSEL LOGIC ---
+    // --- CAROUSEL LOGIC (SWIPE) ---
     const slides = document.querySelectorAll('.carousel-slide');
+    const wrapper = document.getElementById('bannerWrapper');
     let currentSlide = 0;
+
+    // Only activate animation if more than 1 image
     if (slides.length > 1) {
         setInterval(() => {
-            slides[currentSlide].classList.remove('active');
-            currentSlide = (currentSlide + 1) % slides.length;
-            slides[currentSlide].classList.add('active');
-        }, 4000); 
+            currentSlide++;
+
+            // Loop back to start
+            if (currentSlide >= slides.length) {
+                currentSlide = 0;
+            }
+
+            // Move the film strip
+            if (wrapper) {
+                wrapper.style.transform = `translateX(-${currentSlide * 100}%)`;
+            }
+        }, 4000);
     }
 
     // --- STATE ---
     let isModalOpen = false;
-    let sessionAddedTime = 0;     
-    let localTime = 0;      
+    let sessionAddedTime = 0;
+    let localTime = 0;
     let slotTime = 0;
-    let slotMaxTime = 30; // Default fallback    
-    let currentStatus = "loading"; 
+    let slotMaxTime = 30;
+    let currentStatus = "loading";
     let ws = null;
-    let coinProcessTimeout = null;
-    
-    // --- HYBRID POLLING SYSTEM ---
-    let fastPollTimer = null; // Holds the 1s interval timer when active
+    let fastPollTimer = null;
 
     // --- RESTORE FROM CACHE ---
     const cachedTime = localStorage.getItem("piso_time_" + mac);
@@ -385,22 +714,21 @@
             } else if (data.type === "coin_counting") {
                 const btn = document.getElementById("btnModalAction");
                 btn.disabled = true;
-                btn.innerHTML = `<span class="pulse-animation">Processing...</span>`; 
+                btn.innerHTML = `<span class="pulse-animation">Processing...</span>`;
                 btn.className = "btn btn-disabled";
-                btn.style.background = "#6b7280"; 
+                btn.style.background = "#6b7280";
                 btn.style.color = "white";
 
             } else if (data.type === "coin_inserted") {
                 localTime = data.time_remaining;
                 handleSlotLogic(data);
-                audioCoin.currentTime = 0; 
+                audioCoin.currentTime = 0;
                 audioCoin.play().catch(e => console.log("Audio Error:", e));
 
             } else if (data.type === "slot_closed") {
                 if (isModalOpen) closeModal(false);
             }
         };
-        // FIX: Retry faster (500ms) to help users with spotty connections
         ws.onclose = () => { setTimeout(connectWebSocket, 500); };
     }
 
@@ -409,19 +737,15 @@
             let res = await fetch(`/status?mac=${mac}`);
             let data = await res.json();
             localTime = data.time_remaining;
-            
-            // FIX: If server says slot is open, force modal open (Backup for dead WebSocket)
+
             if (data.slot_seconds > 0 && !isModalOpen) {
                 handleSlotLogic(data);
             }
-            
             updateUI(data);
-            
-            if(data.points_enabled !== undefined) pointsEnabled = data.points_enabled;
-            if(data.coin_point_map) pointMap = data.coin_point_map;
-
+            if (data.points_enabled !== undefined) pointsEnabled = data.points_enabled;
+            if (data.coin_point_map) pointMap = data.coin_point_map;
             if (data.slot_seconds > 0) handleSlotLogic(data);
-        } catch(e) {}
+        } catch (e) { }
     }
 
     // --- TIMER LOOP ---
@@ -459,99 +783,109 @@
         }, 3000);
     }
 
-    // --- MODAL & LOGIC ---
+    function handleModalAction() {
+        if (sessionAddedTime > 0) connectInternet();
+        closeModal(true);
+    }
+
+    function closeModal(shouldTellServer) {
+        if (shouldTellServer) fetch(`/cancel_slot?mac=${mac}`, { method: "POST" });
+        document.getElementById("coinModal").style.display = "none";
+        isModalOpen = false;
+        sessionAddedTime = 0;
+        audioInsert.pause();
+        audioInsert.currentTime = 0;
+
+        if (fastPollTimer) {
+            clearInterval(fastPollTimer);
+            fastPollTimer = null;
+        }
+        const btn = document.getElementById("btnInsert");
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = "Insert Coin";
+        }
+    }
+
     function handleSlotLogic(data) {
         if (!isModalOpen) {
             isModalOpen = true;
             document.getElementById("coinModal").style.display = "flex";
         }
         slotTime = data.slot_seconds;
-        if(data.coin_rates) ratesStr = data.coin_rates;
+        if (data.coin_rates) ratesStr = data.coin_rates;
+        if (data.slot_max_seconds) slotMaxTime = data.slot_max_seconds;
+        else if (data.type === "slot_opened") slotMaxTime = data.slot_seconds;
 
-        if (data.slot_max_seconds) {
-            slotMaxTime = data.slot_max_seconds;
-        } else if (data.type === "slot_opened") {
-            slotMaxTime = data.slot_seconds;
-        }
-        
         document.getElementById("slotSeconds").innerText = slotTime;
         const percentage = (slotTime / slotMaxTime) * 100;
         document.getElementById("slotProgressBar").style.width = percentage + "%";
 
         let currentBalance = data.balance || 0;
-        sessionAddedTime = calculateTimeFromBalance(currentBalance); 
+        sessionAddedTime = calculateTimeFromBalance(currentBalance);
 
-        document.getElementById("modalTimeVal").innerText = formatHumanTime(sessionAddedTime * 60);
+        document.getElementById("modalTimeVal").innerText = formatHumanTime(sessionAddedTime * 60).htmlText;
         document.getElementById("modalAmountVal").innerText = parseFloat(currentBalance).toFixed(2);
-        
-        // --- LIVE CALCULATION: Pending Points for Current Session ---
-        if(pointsEnabled) {
-             let pendingPoints = calculatePointsFromBalance(currentBalance);
-             let el = document.getElementById("modalPointsVal");
-             if(el) {
-                 // Convert to number to strip trailing zeros, but allow decimals
-                 el.innerText = +pendingPoints.toFixed(2);
-             }
+
+        if (pointsEnabled) {
+            let pendingPoints = calculatePointsFromBalance(currentBalance);
+            let el = document.getElementById("modalPointsVal");
+            if (el) el.innerText = +pendingPoints.toFixed(2);
         }
 
         const btn = document.getElementById("btnModalAction");
         if (sessionAddedTime > 0) {
-            btn.innerText = "DONE & RESUME"; 
-            btn.className = "btn btn-resume pulse-animation"; 
+            btn.innerText = "DONE & RESUME";
+            btn.className = "btn btn-resume pulse-animation";
             btn.disabled = false;
-            btn.style.background = ""; // Reset style
+            btn.style.background = "";
             btn.style.color = "";
         } else {
             btn.innerText = "CANCEL";
             btn.className = "btn btn-disabled";
-            btn.disabled = false; // Allow cancel if 0 balance
+            btn.disabled = false;
             btn.style.background = "var(--danger)";
             btn.style.color = "white";
         }
     }
-    
+
     function calculateTimeFromBalance(balance) {
         let rates = [];
         try {
             ratesStr.split(',').forEach(part => {
                 let [amt, mins] = part.split(':');
-                rates.push({amt: parseInt(amt), mins: parseInt(mins)});
+                rates.push({ amt: parseInt(amt), mins: parseInt(mins) });
             });
             rates.sort((a, b) => b.amt - a.amt);
-        } catch(e) { rates = [{amt:1, mins:5}]; }
+        } catch (e) { rates = [{ amt: 1, mins: 5 }]; }
 
         let totalMins = 0;
         let rem = parseInt(balance);
-
         rates.forEach(r => {
-            if(r.amt > 0) {
+            if (r.amt > 0) {
                 let count = Math.floor(rem / r.amt);
-                if(count > 0) {
+                if (count > 0) {
                     totalMins += count * r.mins;
                     rem = rem % r.amt;
                 }
             }
         });
-        if(rem > 0) totalMins += rem * 5; 
+        if (rem > 0) totalMins += rem * 5;
         return totalMins;
     }
 
-    // --- NEW: Front-End Greedy Points Calculation ---
     function calculatePointsFromBalance(balance) {
-        let rem = parseInt(balance); // Greedy usually works on whole numbers, but can adapt
+        let rem = parseInt(balance);
         let totalPts = 0;
-        
-        // Convert map to array and sort desc by coin value
         let rates = [];
-        for(let k in pointMap) {
-            rates.push({amt: parseFloat(k), val: parseFloat(pointMap[k])});
+        for (let k in pointMap) {
+            rates.push({ amt: parseFloat(k), val: parseFloat(pointMap[k]) });
         }
         rates.sort((a, b) => b.amt - a.amt);
-
         rates.forEach(r => {
-            if(r.amt > 0) {
+            if (r.amt > 0) {
                 let count = Math.floor(rem / r.amt);
-                if(count > 0) {
+                if (count > 0) {
                     totalPts += count * r.val;
                     rem = rem % r.amt;
                 }
@@ -563,35 +897,62 @@
     function openRatesModal() {
         let container = document.getElementById("ratesList");
         container.innerHTML = "";
+
+        const gridLayout = "grid-template-columns: 1fr 1fr 1.5fr;";
+
+        let header = document.createElement("div");
+        header.className = "stat-row border-bottom";
+        header.style.padding = "10px 15px";
+        header.style.background = "#f8fafc";
+        header.style.fontSize = "0.75rem";
+        header.style.fontWeight = "700";
+        header.style.color = "#94a3b8";
+        header.style.textTransform = "uppercase";
+        header.style.letterSpacing = "1px";
+
+        header.innerHTML = `
+            <div style="display:grid; ${gridLayout} align-items:center; width:100%;">
+                <span style="text-align: left;">Price</span>
+                <div style="text-align: center;">Bonus</div>
+                <span style="text-align: right;">Duration</span>
+            </div>
+        `;
+        container.appendChild(header);
+
         let rates = [];
         try {
             ratesStr.split(',').forEach(part => {
                 let [amt, mins] = part.split(':');
-                rates.push({amt: parseInt(amt), mins: parseInt(mins)});
+                rates.push({ amt: parseInt(amt), mins: parseInt(mins) });
             });
             rates.sort((a, b) => a.amt - b.amt);
-        } catch(e) { }
+        } catch (e) { }
 
         rates.forEach(r => {
             let row = document.createElement("div");
             row.className = "stat-row border-bottom";
             row.style.fontSize = "0.95rem";
             row.style.padding = "12px 15px";
-            
-            // --- POINTS LOGIC IN RATES ---
-            let pointsHtml = "";
+
+            let pointsHtml = '<span style="color:#cbd5e1; font-weight:400;">-</span>';
             if (pointsEnabled && pointMap) {
                 let pts = pointMap[r.amt.toString()] || 0;
                 if (pts > 0) {
-                    pointsHtml = `<span style="color:#f59e0b; font-weight:600; font-size:0.85rem;">+${pts} Pts</span>`;
+                    pointsHtml = `<span style="background:#fff7ed; color:#d97706; padding:2px 8px; border-radius:10px; font-weight:700; font-size:0.8rem; border:1px solid #ffedd5;">+${pts} Pts</span>`;
                 }
             }
 
+            let timeObj = formatHumanTime(r.mins * 60);
+            let timeHtml = timeObj.htmlText;
+            if (timeHtml.includes("0<span class=\"unit-small\">SEC.</span>")) {
+                timeHtml = timeHtml.replace(" 0<span class=\"unit-small\">SEC.</span>", "");
+            }
+
             row.innerHTML = `
-                <div style="display:grid; grid-template-columns: 80px 1fr auto; align-items:center; width:100%;">
-                    <span style="font-weight:700; font-size:1.1rem;">₱${r.amt}</span>
-                    <div style="text-align: left;">${pointsHtml}</div>
-                    <span class="stat-value" style="font-weight:500; color:var(--text-sub); text-align: right;">${formatHumanTime(r.mins * 60)}</span>
+                <div style="display:grid; ${gridLayout} align-items:center; width:100%;">
+                    <span style="font-weight:800; font-size:1.1rem; color:var(--text-main);">₱${r.amt}</span>
+                    <div style="text-align: center;">${pointsHtml}</div>
+                    <span class="stat-value" style="font-weight:600; color:var(--text-sub); text-align: right;">${timeHtml}</span>
                 </div>
             `;
             container.appendChild(row);
@@ -599,82 +960,46 @@
         document.getElementById("ratesModal").style.display = "flex";
     }
 
-    function closeModal(shouldTellServer) {
-        if (shouldTellServer) fetch(`/cancel_slot?mac=${mac}`, {method: "POST"});
-        document.getElementById("coinModal").style.display = "none";
-        isModalOpen = false;
-        sessionAddedTime = 0;
-        audioInsert.pause();
-        audioInsert.currentTime = 0;
-
-        // FIX: Stop Fast Polling when modal closes
-        if (fastPollTimer) {
-            clearInterval(fastPollTimer);
-            fastPollTimer = null;
-        }
-
-        // Re-enable the main button
-        const btn = document.getElementById("btnInsert");
-        if(btn) {
-            btn.disabled = false;
-            btn.innerText = "Insert Coin";
-        }
-    }
-
-    function handleModalAction() {
-        if (sessionAddedTime > 0) connectInternet(); 
-        closeModal(true);
-    }
-
     function activateSlot() {
-        // Disable button immediately
         const btn = document.getElementById("btnInsert");
         btn.disabled = true;
         btn.innerText = "Please Wait...";
-
-        fetch(`/enable_slot?mac=${mac}`)
-            .then(r => r.json())
-            .then(d => {
-                if(d.result === "success") {
-                    // FIX: Trigger immediate check + Start Fast Polling (1s)
-                    // This hybrid approach ensures reliability even if WebSocket is dead on iOS
-                    fetchStatus();
-                    if (fastPollTimer) clearInterval(fastPollTimer);
-                    fastPollTimer = setInterval(fetchStatus, 1000);
-
-                } else if (d.result === "blocked") {
-                    showToast("Access Denied: You are BLOCKED. Contact Owner.", "error");
-                    btn.disabled = false;
-                    btn.innerText = "Insert Coin";
-                } else {
-                    showToast("System Busy - Someone is inserting coins", "error");
-                    btn.disabled = false;
-                    btn.innerText = "Insert Coin";
-                }
-            })
-            .catch(err => {
-                showToast("Network Error: Could not activate slot", "error");
+        fetch(`/enable_slot?mac=${mac}`).then(r => r.json()).then(d => {
+            if (d.result === "success") {
+                fetchStatus();
+                if (fastPollTimer) clearInterval(fastPollTimer);
+                fastPollTimer = setInterval(fetchStatus, 1000);
+            } else if (d.result === "blocked") {
+                showToast("Access Denied: You are BLOCKED. Contact Owner.", "error");
                 btn.disabled = false;
                 btn.innerText = "Insert Coin";
-            });
+            } else {
+                showToast("System Busy - Someone is inserting coins", "error");
+                btn.disabled = false;
+                btn.innerText = "Insert Coin";
+            }
+        }).catch(err => {
+            showToast("Network Error: Could not activate slot", "error");
+            btn.disabled = false;
+            btn.innerText = "Insert Coin";
+        });
     }
 
     function connectInternet() {
-        currentStatus = "connected"; 
+        currentStatus = "connected";
         updateUI({ status: "connected", time_remaining: localTime, is_busy: false, balance: 0 });
         document.getElementById("statusBadge").innerText = "OPENING PORTAL...";
         document.getElementById("btnAction").innerText = "Resuming...";
-
-        fetch(`/connect?mac=${mac}`, {method:'POST'}).then(r => r.json()).then(d => {
-            if(d.result === "success") {
+        fetch(`/connect?mac=${mac}`, { method: 'POST' }).then(r => r.json()).then(d => {
+            if (d.result === "success") {
                 document.getElementById("connectionStatus").innerText = "Connection Established!";
                 showToast("Connected! Validating...", "success");
                 setTimeout(() => { window.location.reload(); }, 1500);
             } else if (d.result === "blocked") {
-                updateUI({ status: "paused", time_remaining: localTime, is_busy: false, balance: 0 }); 
+                updateUI({ status: "paused", time_remaining: localTime, is_busy: false, balance: 0 });
                 showToast("Access Denied: You are BLOCKED. Contact Owner.", "error");
             } else {
-                updateUI({ status: "paused", time_remaining: localTime, is_busy: false, balance: 0 }); 
+                updateUI({ status: "paused", time_remaining: localTime, is_busy: false, balance: 0 });
                 showToast("Connection Failed. Try again.", "error");
             }
         }).catch(err => {
@@ -686,63 +1011,44 @@
     function pauseInternet() {
         currentStatus = "paused";
         updateUI({ status: "paused", time_remaining: localTime, is_busy: false, balance: 0 });
-        fetch(`/pause?mac=${mac}`, {method:'POST'}).then(r => r.json());
+        fetch(`/pause?mac=${mac}`, { method: 'POST' }).then(r => r.json());
     }
 
-    function claimFreeTime() {
-        document.getElementById('confirmModal').style.display = 'flex';
-    }
-
-    function closeConfirmModal() {
-        document.getElementById('confirmModal').style.display = 'none';
-    }
+    function claimFreeTime() { document.getElementById('confirmModal').style.display = 'flex'; }
+    function closeConfirmModal() { document.getElementById('confirmModal').style.display = 'none'; }
+    function closeSuccessModal() { document.getElementById('successModal').style.display = 'none'; window.location.reload(); }
 
     function proceedClaim() {
         closeConfirmModal();
         const btn = document.getElementById("btnFree");
-        if(btn) {
-            btn.disabled = true;
-            btn.innerText = "Claiming...";
-        }
-
-        fetch(`/claim_free_time?mac=${mac}`, {method: 'POST'})
-        .then(r => r.json())
-        .then(d => {
-            if(d.result === "success") {
+        if (btn) { btn.disabled = true; btn.innerText = "Claiming..."; }
+        fetch(`/claim_free_time?mac=${mac}`, { method: 'POST' }).then(r => r.json()).then(d => {
+            if (d.result === "success") {
                 document.getElementById('successModal').style.display = 'flex';
-                if(btn) btn.style.display = 'none'; 
+                if (btn) btn.style.display = 'none';
             } else if (d.result === "already_claimed") {
                 showToast("You have already claimed this offer.", "error");
-                if(btn) btn.style.display = 'none';
+                if (btn) btn.style.display = 'none';
             } else if (d.result === "disabled") {
                 showToast("Free trial is currently disabled.", "error");
             } else {
                 showToast("Offer is currently unavailable.", "error");
-                if(btn) {
-                    btn.disabled = false;
-                    btn.innerText = "🎁 Claim Free Time";
-                }
+                if (btn) { btn.disabled = false; btn.innerText = "🎁 Claim Free Time"; }
             }
         });
-    }
-
-    function closeSuccessModal() {
-        document.getElementById('successModal').style.display = 'none';
-        window.location.reload();
     }
 
     function updateUI(data) {
         currentStatus = data.status;
         localStorage.setItem("piso_time_" + mac, data.time_remaining);
         localStorage.setItem("piso_status_" + mac, data.status);
-        if(data.coin_rates) ratesStr = data.coin_rates;
+        if (data.coin_rates) ratesStr = data.coin_rates;
 
         let bal = data.balance !== undefined ? data.balance : 0;
         document.getElementById("balanceDisplay").innerText = bal;
-
-        if(data.points !== undefined) {
-             let el = document.getElementById("pointsDisplay");
-             if(el) el.innerText = data.points;
+        if (data.points !== undefined) {
+            let el = document.getElementById("pointsDisplay");
+            if (el) el.innerText = data.points;
         }
 
         const btnInsert = document.getElementById("btnInsert");
@@ -751,7 +1057,7 @@
         const badgeContainer = document.getElementById("statusBadgeContainer");
         const connStatus = document.getElementById("connectionStatus");
 
-        btnInsert.innerHTML = "Insert Coin"; 
+        btnInsert.innerHTML = "Insert Coin";
         btnInsert.className = "btn btn-insert";
         btnInsert.disabled = false;
 
@@ -760,23 +1066,19 @@
             badgeContainer.style.background = "rgba(16, 185, 129, 0.2)";
             connStatus.innerText = "Internet Active";
             connStatus.style.color = "var(--success)";
-            
             btnAction.innerText = "PAUSE TIME";
             btnAction.className = "btn btn-pause";
             btnAction.disabled = false;
             btnAction.onclick = pauseInternet;
-
         } else if (data.status === "paused" || (data.time_remaining > 0 || localTime > 0)) {
             statusBadge.innerText = "PAUSED";
             badgeContainer.style.background = "rgba(245, 158, 11, 0.2)";
             connStatus.innerText = "Time Paused";
             connStatus.style.color = "var(--warning)";
-            
             btnAction.innerText = "RESUME TIME";
             btnAction.className = "btn btn-resume";
             btnAction.disabled = false;
             btnAction.onclick = connectInternet;
-
         } else if (data.is_busy && !isModalOpen) {
             statusBadge.innerText = "BUSY";
             badgeContainer.style.background = "rgba(239, 68, 68, 0.2)";
@@ -790,7 +1092,6 @@
             badgeContainer.style.background = "rgba(255, 255, 255, 0.2)";
             connStatus.innerText = "No Time Available";
             connStatus.style.color = "var(--text-sub)";
-            
             btnAction.innerText = "RESUME TIME";
             btnAction.className = "btn btn-disabled";
             btnAction.disabled = true;
@@ -798,24 +1099,51 @@
     }
 
     function updateTimerDisplay(seconds) {
-        if (seconds < 0) seconds = 0;
-        let h = Math.floor(seconds / 3600);
-        let m = Math.floor((seconds % 3600) / 60);
-        let s = seconds % 60;
-        document.getElementById("timeDisplay").innerText = 
-            (h > 0 ? h + ":" : "") + (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+        const display = document.getElementById("timeDisplay");
+        const { htmlText, length } = formatHumanTime(seconds);
+
+        display.innerHTML = htmlText;
+
+        // Adjusted thresholds for safer fitting
+        if (length <= 7) {
+            display.style.fontSize = "2rem";       // e.g. "30MIN."
+        } else if (length <= 10) {
+            display.style.fontSize = "2rem";     // e.g. "1HR. 30MIN."
+        } else if (length <= 15) {
+            display.style.fontSize = "1.8rem";     // e.g. "1D. 4HR. 30MIN."
+        } else if (length <= 22) {
+            display.style.fontSize = "1.6rem";     // e.g. "1MO. 2D. 5HR. 30MIN."
+        } else {
+            display.style.fontSize = "0.95rem";    // Very long strings
+        }
     }
 
+
+
     function formatHumanTime(seconds) {
-        if (seconds === 0) return "0s";
-        let h = Math.floor(seconds / 3600);
-        let m = Math.floor((seconds % 3600) / 60);
-        let s = seconds % 60;
-        let parts = [];
-        if (h > 0) parts.push(h + "h");
-        if (m > 0 || h > 0) parts.push(m + "m");
-        if (s > 0 || parts.length === 0) parts.push(s + "s");
-        return parts.join(" ");
+        if (!Number.isFinite(seconds) || seconds <= 0) {
+            return { plainText: "--", htmlText: "--", length: 2 };
+        }
+        const MONTH = 2592000; const DAY = 86400; const HOUR = 3600; const MIN = 60;
+        const mo = Math.floor(seconds / MONTH);
+        const d = Math.floor((seconds % MONTH) / DAY);
+        const h = Math.floor((seconds % DAY) / HOUR);
+        const m = Math.floor((seconds % HOUR) / MIN);
+        const s = seconds % MIN;
+
+        const partsText = []; const partsHtml = [];
+        const unit = (label) => `<span class="unit-small">${label}</span>`;
+        const showSeconds = mo === 0 && d === 0 && h === 0;
+
+        if (mo > 0) { partsText.push(`${mo}MO.`); partsHtml.push(`${mo}${unit("MO.")}`); }
+        if (d > 0) { partsText.push(`${d}D.`); partsHtml.push(`${d}${unit("D.")}`); }
+        if (h > 0) { partsText.push(`${h}HR.`); partsHtml.push(`${h}${unit("HR.")}`); }
+        partsText.push(`${m}MIN.`); partsHtml.push(`${m}${unit("MIN.")}`);
+        if (showSeconds) { partsText.push(`${s}SEC.`); partsHtml.push(`${s}${unit("SEC.")}`); }
+
+        const plainText = partsText.join(" ");
+        const htmlText = partsHtml.join(" ");
+        return { plainText, htmlText, length: plainText.length };
     }
 
     connectWebSocket();
