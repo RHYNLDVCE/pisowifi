@@ -1,4 +1,3 @@
-# routers/admin.py
 import os
 import shutil
 import time
@@ -8,7 +7,7 @@ import socket
 import subprocess
 from datetime import datetime, timedelta
 from typing import List, Dict
-from fastapi import APIRouter, Request, Form, UploadFile, File, Depends, Request
+from fastapi import APIRouter, Request, Form, UploadFile, File, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel
 import config
@@ -26,13 +25,17 @@ class RestartScheduleRequest(BaseModel):
 class PromoItem(BaseModel):
     id: int
     name: str
-    cost: float  # Changed to float to support 0.5 points
+    cost: float
     minutes: int
 
 class PointsConfigRequest(BaseModel):
     enabled: bool
-    coin_map: Dict[str, float]  # Map "1" -> 0.5
+    coin_map: Dict[str, float]
     promos: List[PromoItem]
+
+class RenameRequest(BaseModel):
+    mac: str
+    name: str
 
 @router.get("/admin/get_restart_schedule")
 async def get_restart_schedule(authorized: bool = Depends(security.is_admin)):
@@ -54,9 +57,22 @@ async def login_page(request: Request):
 @router.post("/auth")
 async def login_action(username: str = Form(...), password: str = Form(...)):
     if database.verify_admin(username, password):
+        access_token_expires = timedelta(minutes=30)
+        access_token = security.create_access_token(
+            data={"sub": username},
+            expires_delta=access_token_expires
+        )
+        
         response = RedirectResponse(url="/admin", status_code=303)
-        response.set_cookie(key="admin_token", value="secret_logged_in_token")
+        response.set_cookie(
+            key="admin_token", 
+            value=access_token, 
+            httponly=True,
+            samesite="lax",
+            secure=False
+        )
         return response
+        
     return RedirectResponse(url="/login?error=Invalid Credentials", status_code=303)
 
 @router.get("/logout")
@@ -65,20 +81,15 @@ async def logout():
     response.delete_cookie("admin_token")
     return response
 
-# --- SYSTEM STATUS API (UPDATED FOR NETWORK SPEED) ---
+# --- SYSTEM STATUS API ---
 
 @router.get("/admin/system_stats")
 async def get_system_stats(authorized: bool = Depends(security.is_admin)):
-    """API endpoint to fetch real-time hardware metrics including Network Speed."""
-    
-    # 1. CPU Temp
     cpu_temp = "N/A"
     try:
-        # Try finding Orange Pi specific thermal zone
         with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
             cpu_temp = round(int(f.read()) / 1000, 1)
     except:
-        # Fallback to psutil sensors
         try:
             temps = psutil.sensors_temperatures()
             if 'cpu_thermal' in temps: 
@@ -87,19 +98,15 @@ async def get_system_stats(authorized: bool = Depends(security.is_admin)):
                 cpu_temp = temps['coretemp'][0].current
         except: pass
 
-    # 2. Memory & Disk
     mem = psutil.virtual_memory()
     disk = psutil.disk_usage('/')
 
-    # 3. Network Speed Calculation (WAN Interface)
-    # We send total bytes; Frontend JS calculates the speed difference.
     net_stats = psutil.net_io_counters(pernic=True)
     wan_stats = net_stats.get(config.WAN_INTERFACE)
     
     rx_bytes = wan_stats.bytes_recv if wan_stats else 0
     tx_bytes = wan_stats.bytes_sent if wan_stats else 0
 
-    # 4. Uptime Calculation
     try:
         boot_time = psutil.boot_time()
         seconds = time.time() - boot_time
@@ -116,7 +123,6 @@ async def get_system_stats(authorized: bool = Depends(security.is_admin)):
     except:
         uptime_str = "Unknown"
 
-    # 5. IP Addresses
     ip_list = []
     try:
         interfaces = psutil.net_if_addrs()
@@ -137,8 +143,8 @@ async def get_system_stats(authorized: bool = Depends(security.is_admin)):
         "disk_free": round(disk.free / (1024**3), 2),
         "uptime": uptime_str,
         "ips": " ".join(ip_list),
-        "wan_rx_total": rx_bytes, # <--- Used for Download Speed
-        "wan_tx_total": tx_bytes  # <--- Used for Upload Speed
+        "wan_rx_total": rx_bytes,
+        "wan_tx_total": tx_bytes
     }
 
 # --- ADMIN PANEL ---
@@ -150,10 +156,8 @@ async def admin_panel(
     page: int = 1, 
     authorized: bool = Depends(security.is_admin)
 ):
-    # Pagination Settings
     ITEMS_PER_PAGE = 10
     
-    # --- SALES CALCULATIONS ---
     now = datetime.now()
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     ts_day = start_of_day.timestamp()
@@ -175,11 +179,9 @@ async def admin_panel(
         "yearly": database.get_sales_since(ts_year),
     }
 
-    # --- USER COUNTS ---
     total_users_count = len(state.users)
     active_users_count = sum(1 for u in state.users.values() if u.get("status") == "connected")
 
-    # --- FILTER, SORT & PAGINATION LOGIC ---
     all_users = list(state.users.items())
 
     if search:
@@ -206,7 +208,6 @@ async def admin_panel(
     end_idx = start_idx + ITEMS_PER_PAGE
     paginated_users = dict(all_users[start_idx:end_idx])
 
-    # --- BANNERS LOGIC ---
     banner_files = []
     if os.path.exists("static/banners/set"):
         actual_files = os.listdir("static/banners/set")
@@ -216,7 +217,6 @@ async def admin_panel(
         for f in actual_files:
             if f not in banner_files: banner_files.append(f)
 
-    # --- SOUND FILES LOGIC ---
     sound_files = []
     if os.path.exists("static/sounds"):
         sound_files = [f for f in os.listdir("static/sounds") if f.lower().endswith(('.mp3', '.wav', '.ogg'))]
@@ -230,7 +230,6 @@ async def admin_panel(
         "active_users": active_users_count,
         "total_users": total_users_count,
         "stats": stats,
-        # SETTINGS
         "slot_timeout": state.config.get("slot_timeout", 30),
         "inactive_timeout": state.config.get("inactive_timeout", 60),
         "auto_pause_enabled": state.config.get("auto_pause_enabled", True),
@@ -248,8 +247,6 @@ async def admin_panel(
         "sound_coin_selected": state.config.get("sound_coin", "coin-recieved.mp3")
     })
 
-# --- CONFIGURATION ROUTES ---
-
 @router.post("/admin/clear_banners")
 async def clear_banners(authorized: bool = Depends(security.is_admin)):
     folder = "static/banners/set"
@@ -257,10 +254,8 @@ async def clear_banners(authorized: bool = Depends(security.is_admin)):
         for filename in os.listdir(folder):
             file_path = os.path.join(folder, filename)
             try:
-                if os.path.isfile(file_path):
-                    os.unlink(file_path)
-            except Exception as e:
-                print(f"Error deleting {file_path}: {e}")
+                if os.path.isfile(file_path): os.unlink(file_path)
+            except Exception as e: print(f"Error deleting {file_path}: {e}")
     if "banner_order" in state.config:
         state.config["banner_order"] = []
         state.save_config()
@@ -392,17 +387,13 @@ async def admin_delete_user(mac: str = Form(...), authorized: bool = Depends(sec
         database.delete_user(mac)
     return RedirectResponse(url="/admin", status_code=303)
 
-
 @router.post("/admin/reboot")
 async def reboot_device(authorized: bool = Depends(security.is_admin)):
-    """Reboots the Orange Pi immediately."""
     try:
-        # 'sudo' is usually not needed if running as root service, but safe to keep
         subprocess.run(["sudo", "reboot"])
         return {"status": "success", "message": "Rebooting now..."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
-
 
 @router.get("/admin/get_points_config")
 async def get_points_config(authorized: bool = Depends(security.is_admin)):
@@ -419,3 +410,162 @@ async def save_points_config(data: PointsConfigRequest, authorized: bool = Depen
     state.config["point_promos"] = [p.dict() for p in data.promos]
     state.save_config()
     return {"status": "success", "message": "Points configuration saved"}
+
+# --- INFRASTRUCTURE SCANNING ---
+
+def get_vendor_info_and_check_type(mac: str, leases: dict) -> tuple[str, bool]:
+    mac_clean = mac.replace(":", "").replace("-", "").upper()
+    oui = mac_clean[:6]
+    
+    vendors = {
+        # --- COMFAST ---
+        "200DB0": "Comfast", "40A5EF": "Comfast", "E0E1A9": "Comfast", "8C3D16": "Comfast", "00E04C": "Comfast",
+        # --- TP-LINK ---
+        "18D6C7": "TP-Link", "CC32E5": "TP-Link", "003192": "TP-Link", "14CC20": "TP-Link",
+        "50C7BF": "TP-Link", "8416F9": "TP-Link", "C025E9": "TP-Link", "E848B8": "TP-Link",
+        "000AEB": "TP-Link", "001478": "TP-Link", "0019E0": "TP-Link", "001D0F": "TP-Link",
+        "002127": "TP-Link", "0023CD": "TP-Link", "002586": "TP-Link", "002719": "TP-Link",
+        "04F9F8": "TP-Link", "081F71": "TP-Link", "0C4B54": "TP-Link", "10FEED": "TP-Link",
+        "147590": "TP-Link", "14CF92": "TP-Link", "18A6F7": "TP-Link", "1C3BF3": "TP-Link",
+        "206BE7": "TP-Link", "20DCE6": "TP-Link", "246968": "TP-Link", "282CB2": "TP-Link",
+        "30B5C2": "TP-Link", "349672": "TP-Link", "34E894": "TP-Link", "388345": "TP-Link",
+        "3C46D8": "TP-Link", "40169F": "TP-Link", "44B32D": "TP-Link", "480EEC": "TP-Link",
+        "503EAA": "TP-Link", "50BD5F": "TP-Link", "54E6FC": "TP-Link", "584120": "TP-Link",
+        "60E327": "TP-Link", "6466B3": "TP-Link", "704F57": "TP-Link", "7405A5": "TP-Link",
+        "74DA88": "TP-Link", "7844FD": "TP-Link", "7C8BCA": "TP-Link", "808917": "TP-Link",
+        "882593": "TP-Link", "8C210A": "TP-Link", "90F652": "TP-Link", "940C6D": "TP-Link",
+        "984827": "TP-Link", "98DED0": "TP-Link", "A0F3C1": "TP-Link", "A42BB0": "TP-Link",
+        "AC84C6": "TP-Link", "B0487A": "TP-Link", "B0BE76": "TP-Link", "B8F883": "TP-Link",
+        "C04A00": "TP-Link", "C46E1F": "TP-Link", "CC3429": "TP-Link", "D4016D": "TP-Link",
+        "D807B6": "TP-Link", "DC0077": "TP-Link", "E005C5": "TP-Link", "E4C32A": "TP-Link",
+        "EC086B": "TP-Link", "F4F26D": "TP-Link", "F81A67": "TP-Link", "FC70F4": "TP-Link",
+        # --- TENDA ---
+        "0495E6": "Tenda", "0840F3": "Tenda", "500FF5": "Tenda", "502B73": "Tenda",
+        "CC2D21": "Tenda", "C83A35": "Tenda", "0050FC": "Tenda",
+        # --- FIBER MODEMS ---
+        "001882": "Huawei", "00E0FC": "Huawei", "4846F1": "Huawei", 
+        "0015EB": "ZTE", "001E73": "ZTE", "D0DD7C": "ZTE",
+        "286ED4": "FiberHome", "807D14": "FiberHome"
+    }
+
+    brand = vendors.get(oui, "Unknown")
+    hostname = leases.get(mac, "")
+    if hostname == "*": hostname = ""
+    
+    is_known = (brand != "Unknown")
+
+    if brand != "Unknown" and hostname:
+        display = f"{brand} ({hostname})"
+    elif brand != "Unknown":
+        display = brand
+    elif hostname:
+        display = f"Unknown ({hostname})"
+    else:
+        display = "Unknown Device"
+        
+    return display, is_known
+
+def is_random_mac(mac: str) -> bool:
+    try:
+        first_byte = int(mac.split(':')[0], 16)
+        return (first_byte & 0x02) != 0
+    except:
+        return False
+
+@router.post("/admin/rename_device")
+async def rename_device(data: RenameRequest, authorized: bool = Depends(security.is_admin)):
+    if "custom_device_names" not in state.config:
+        state.config["custom_device_names"] = {}
+    
+    state.config["custom_device_names"][data.mac] = data.name.strip()
+    state.save_config()
+    return {"status": "success"}
+
+def is_reachable(ip: str) -> bool:
+    try:
+        subprocess.check_call(
+            ['ping', '-c', '1', '-W', '1', ip],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        return True
+    except:
+        return False
+
+@router.get("/admin/get_infrastructure_devices")
+async def get_infrastructure_devices(authorized: bool = Depends(security.is_admin)):
+    devices = []
+    active_user_macs = set(state.users.keys())
+    custom_names = state.config.get("custom_device_names", {})
+
+    dhcp_leases = {}
+    lease_files = ["/var/lib/misc/dnsmasq.leases", "/var/lib/dnsmasq/dnsmasq.leases"]
+    for lf in lease_files:
+        if os.path.exists(lf):
+            try:
+                with open(lf, 'r') as f:
+                    for line in f:
+                        parts = line.split()
+                        if len(parts) >= 4:
+                            dhcp_leases[parts[1]] = parts[3] 
+            except: pass
+
+    try:
+        with open('/proc/net/arp') as f:
+            lines = f.readlines()[1:] 
+
+        for line in lines:
+            parts = line.split()
+            if len(parts) < 6: continue
+            
+            ip, hw_type, flags, mac, mask, interface = parts[:6]
+
+            # We relax the strict filter. 
+            # We SHOW "Unknown Devices" now so you can find your Comfast APs.
+            if (interface == config.LAN_INTERFACE and 
+                mac != "00:00:00:00:00:00" and 
+                mac not in active_user_macs):
+                
+                # 1. Filter Random MACs (Likely Phones) - KEEP
+                if is_random_mac(mac) and mac not in custom_names:
+                    continue
+
+                display_name, is_known_brand = get_vendor_info_and_check_type(mac, dhcp_leases)
+                
+                # 2. Filter Explicit Hostnames (Likely Phones) - KEEP
+                # Clean up the list by hiding obvious phones
+                name_upper = display_name.upper()
+                phone_keywords = ["NAM", "V2", "OPPO", "VIVO", "REALME", "IPHONE", "GALAXY", "XIAOMI", "POCO", "REDMI", "ANDROID"]
+                
+                is_likely_phone = False
+                for kw in phone_keywords:
+                    if kw in name_upper:
+                        is_likely_phone = True
+                        break
+                
+                if is_likely_phone and mac not in custom_names:
+                    continue
+                
+                # 3. SHOW EVERYTHING ELSE (Even Unknowns)
+                # This ensures your Comfasts will appear even if my list is missing their MAC prefix.
+                
+                online_status = is_reachable(ip)
+
+                if mac in custom_names and custom_names[mac]:
+                    display_name = f"{custom_names[mac]}"
+                    is_custom = True
+                else:
+                    is_custom = False
+                
+                devices.append({
+                    "ip": ip,
+                    "mac": mac,
+                    "vendor": display_name,
+                    "is_custom": is_custom,
+                    "is_online": online_status
+                })
+
+    except Exception as e:
+        print(f"ARP Error: {e}")
+
+    return {"devices": devices}

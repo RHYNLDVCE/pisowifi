@@ -197,9 +197,9 @@
 
     /* ALIGN TO BOTTOM */
     .unit-small {
-        font-size: 0.65em;
+        font-size: 0.5em;
         margin-left: 1px;
-        margin-right: 5px;
+        margin-right: 2px;
         color: var(--text-sub);
         vertical-align: baseline;
         text-transform: uppercase;
@@ -824,7 +824,7 @@
         let currentBalance = data.balance || 0;
         sessionAddedTime = calculateTimeFromBalance(currentBalance);
 
-        document.getElementById("modalTimeVal").innerText = formatHumanTime(sessionAddedTime * 60).htmlText;
+        document.getElementById("modalTimeVal").innerHTML = formatHumanTime(sessionAddedTime * 60, true).htmlText;
         document.getElementById("modalAmountVal").innerText = parseFloat(currentBalance).toFixed(2);
 
         if (pointsEnabled) {
@@ -1103,8 +1103,6 @@
         const { htmlText, length } = formatHumanTime(seconds);
 
         display.innerHTML = htmlText;
-
-        // Adjusted thresholds for safer fitting
         if (length <= 7) {
             display.style.fontSize = "2rem";       // e.g. "30MIN."
         } else if (length <= 10) {
@@ -1112,20 +1110,31 @@
         } else if (length <= 15) {
             display.style.fontSize = "1.8rem";     // e.g. "1D. 4HR. 30MIN."
         } else if (length <= 22) {
+            display.style.fontSize = "1.8rem";    // e.g. "1MO. 2D. 5HR. 30MIN."
+        } else if (length <= 26) {
             display.style.fontSize = "1.6rem";     // e.g. "1MO. 2D. 5HR. 30MIN."
+        } else if (length <= 30) {
+            display.style.fontSize = "1.4rem";     // e.g. "1MO. 2D. 5HR. 30MIN."
         } else {
-            display.style.fontSize = "0.95rem";    // Very long strings
+            display.style.fontSize = "1.2rem";    // Very long strings
         }
     }
 
 
 
-    function formatHumanTime(seconds) {
+    function formatHumanTime(seconds, hideZeroSeconds = false) {
         if (!Number.isFinite(seconds) || seconds <= 0) {
             return { plainText: "--", htmlText: "--", length: 2 };
         }
-        const MONTH = 2592000; const DAY = 86400; const HOUR = 3600; const MIN = 60;
-        const mo = Math.floor(seconds / MONTH);
+
+        const YEAR = 31104000;
+        const MONTH = 2592000;
+        const DAY = 86400;
+        const HOUR = 3600;
+        const MIN = 60;
+
+        const y = Math.floor(seconds / YEAR);
+        const mo = Math.floor((seconds % YEAR) / MONTH);
         const d = Math.floor((seconds % MONTH) / DAY);
         const h = Math.floor((seconds % DAY) / HOUR);
         const m = Math.floor((seconds % HOUR) / MIN);
@@ -1133,19 +1142,26 @@
 
         const partsText = []; const partsHtml = [];
         const unit = (label) => `<span class="unit-small">${label}</span>`;
-        const showSeconds = mo === 0 && d === 0 && h === 0;
 
+        if (y > 0) { partsText.push(`${y}YR.`); partsHtml.push(`${y}${unit("YR.")}`); }
         if (mo > 0) { partsText.push(`${mo}MO.`); partsHtml.push(`${mo}${unit("MO.")}`); }
         if (d > 0) { partsText.push(`${d}D.`); partsHtml.push(`${d}${unit("D.")}`); }
         if (h > 0) { partsText.push(`${h}HR.`); partsHtml.push(`${h}${unit("HR.")}`); }
-        partsText.push(`${m}MIN.`); partsHtml.push(`${m}${unit("MIN.")}`);
-        if (showSeconds) { partsText.push(`${s}SEC.`); partsHtml.push(`${s}${unit("SEC.")}`); }
+
+        if (m > 0 || y > 0 || mo > 0 || d > 0 || h > 0) {
+            partsText.push(`${m}MIN.`); partsHtml.push(`${m}${unit("MIN.")}`);
+        }
+
+        if (!hideZeroSeconds || s > 0) {
+            partsText.push(`${s}SEC.`);
+            partsHtml.push(`<span style="color: #f59e0b;">${s}</span><span class="unit-small" style="color: #f59e0b;">SEC.</span>`);
+        }
 
         const plainText = partsText.join(" ");
-        const htmlText = partsHtml.join(" ");
+        const htmlText = `<span style="display:inline-block;">${partsHtml.join("")}</span>`;
+
         return { plainText, htmlText, length: plainText.length };
     }
-
     connectWebSocket();
 </script>
 {% endblock %}

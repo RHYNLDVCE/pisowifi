@@ -1,6 +1,8 @@
 # main.py
 import os
 import asyncio
+import subprocess
+import uvicorn  # <--- Added for manual execution
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
@@ -13,17 +15,11 @@ from hardware import controller
 app = FastAPI()
 
 # 1. Setup Resources
-# Ensure base static folder exists
 os.makedirs("static", exist_ok=True)
-
-# Ensure Banner Subdirectories exist
-os.makedirs("static/banners/set", exist_ok=True)      # For Admin Uploads
-os.makedirs("static/banners/default", exist_ok=True)  # For Default Fallbacks
-
-# Ensure Sound folder exists
+os.makedirs("static/banners/set", exist_ok=True)
+os.makedirs("static/banners/default", exist_ok=True)
 os.makedirs("static/sounds", exist_ok=True)
 
-# Mount the static directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # 2. Register Routes
@@ -40,45 +36,64 @@ async def startup_event():
     database.init_db()
     state.users = database.load_users()
     
-    # --- NEW FEATURE: Auto-Pause on Power Outage/Reboot ---
-    # This loop checks if anyone was "connected" when the power died.
-    # We force them to "paused" so their time stops and the Portal pops up.
+    # --- AUTO-PAUSE LOGIC ---
     print("🔌 Power Cycle Detected: Checking for active sessions...")
     count_paused = 0
     for mac, data in state.users.items():
         if data["status"] == "connected":
+            # Force status to paused
             data["status"] = "paused"
-            database.sync_user(mac, data)  # Save the 'paused' state to DB immediately
+            database.sync_user(mac, data)
             count_paused += 1
             print(f"   -> Auto-Paused User: {mac}")
     
     if count_paused > 0:
-        print(f"✅ Auto-Paused {count_paused} users. They must click 'Resume' to reconnect.")
+        print(f"✅ Auto-Paused {count_paused} users.")
     else:
         print("✅ No active users found to pause.")
-    # ------------------------------------------------------
-
-    print(f"✅ Loaded {len(state.users)} users from DB.")
 
     # 4. Network Startup
-    # Since everyone is now "paused" or "expired", the firewall starts clean (Blocking everyone).
+    # Initialize the firewall (flushes IPSet and IPTables)
     firewall.init_firewall()
 
-    # 5. Capture the Main Loop (For WebSockets)
+    # --- FIX: FLUSH CONNECTIONS (Anti-Ghosting) ---
+    # This kills all "ghost" connections (videos, games) that were active before reboot.
+    print("🧹 Flushing connection tracking entries...")
+    try:
+        subprocess.run(["conntrack", "-F"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        print("⚠️ Warning: Could not flush conntrack. Install via 'sudo apt install conntrack'")
+
+    # 5. Capture the Main Loop
     state.loop = asyncio.get_running_loop()
 
-    # 6. Initialize Hardware (GPIO)
+    # 6. Initialize Hardware
     controller.setup()
 
-    # 7. Start Background Services (Coins & Timer)
+    # 7. Start Background Services
     background.start_background_tasks()
     
-    print("🚀 PisoWifi System Started Successfully!")
+    print("🚀 PisoWifi System Started Successfully! (All connections dropped)")
 
 @app.on_event("shutdown")
 def shutdown_event():
     print("🛑 System Shutting Down...")
+    
+    # 1. Turn off Coin Slot
     try:
         controller.turn_slot_off()
     except Exception as e:
-        print(f"Cleanup Error: {e}")
+        print(f"Hardware Cleanup Error: {e}")
+
+    # 2. TRIGGER FAIL-SAFE (Redundancy)
+    # Ensure internet is cut even if systemd script is delayed
+    try:
+        subprocess.run(["/home/reyes/pisowifi/fail_safe.sh"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print("🔒 Fail-Safe Triggered internally.")
+    except:
+        pass
+
+# --- STANDARD ENTRY POINT ---
+# This allows you to run 'python3 main.py' manually if needed.
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=80, reload=False)

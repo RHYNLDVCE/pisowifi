@@ -4,14 +4,14 @@
     "inactive_timeout": 300,
     "auto_pause_enabled": true,
     "speed_limit_enabled": true,
-    "global_speed_limit": 15,
+    "global_speed_limit": 16,
     "gaming_mode_enabled": true,
     "inactive_packet_threshold": 5,
     "coin_rates": "1:12,5:70,10:181,20:481",
-    "pulse_value": 5,
+    "pulse_value": 1,
     "restart_schedule": {
         "enabled": true,
-        "time": "03:00"
+        "time": "03:05"
     },
     "points_enabled": true,
     "coin_point_map": {
@@ -35,7 +35,7 @@
         }
     ],
     "inactive_bytes_threshold": 500,
-    "banner_text": "Open JellyFin",
+    "banner_text": "Open Jellyfin",
     "banner_link": "http://192.168.0.166:8096/",
     "banner_order": [
         "MLBB-Sora2-1125x633.jpg",

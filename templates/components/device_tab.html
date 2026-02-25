@@ -46,13 +46,41 @@
     </div>
 
     <div class="card">
-        <h3>⏳ Scheduled Restart</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h3 style="margin:0;">Connected Access Points</h3>
+            <button onclick="loadAccessPoints()" class="btn btn-primary" style="width: auto; padding: 5px 15px; font-size: 0.85rem;">
+                Scan Status
+            </button>
+        </div>
+        <p style="color: #6b7280; margin-bottom: 20px;">
+            Monitor your infrastructure. If a device is <span style="color:#ef4444; font-weight:bold;">Offline</span>, it may need a physical reboot.
+        </p>
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #f3f4f6; text-align: left;">
+                        <th style="padding: 12px; color: #6b7280; font-size: 0.85rem;">Status</th>
+                        <th style="padding: 12px; color: #6b7280; font-size: 0.85rem;">Device Name</th>
+                        <th style="padding: 12px; color: #6b7280; font-size: 0.85rem;">IP Address</th>
+                        <th style="padding: 12px; color: #6b7280; font-size: 0.85rem;">MAC Address</th>
+                        <th style="padding: 12px; color: #6b7280; font-size: 0.85rem; text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="ap_table_body">
+                    <tr><td colspan="5" style="padding: 20px; text-align: center; color: #9ca3af;">Click Scan to check status...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Scheduled Restart</h3>
         <p style="color: #6b7280; margin-bottom: 20px;">
             Automatically restart the system daily to clear RAM and ensure stability.
         </p>
         
         <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
-            
             <div class="toggle-wrapper">
                 <label class="switch">
                     <input type="checkbox" id="restartEnabled">
@@ -89,9 +117,70 @@
 </div>
 
 <script>
-    // --- SCHEDULED RESTART LOGIC ---
+    // --- 1. ACCESS POINT SCANNER ---
+    async function loadAccessPoints() {
+        const tbody = document.getElementById("ap_table_body");
+        tbody.innerHTML = "<tr><td colspan='5' style='padding:20px; text-align:center;'>Scanning & Pinging Devices... (Please Wait)</td></tr>";
 
-    // 1. Fetch settings from backend
+        try {
+            const res = await fetch("/admin/get_infrastructure_devices");
+            const data = await res.json();
+            
+            tbody.innerHTML = ""; 
+
+            if (data.devices && data.devices.length > 0) {
+                data.devices.forEach(dev => {
+                    let nameStyle = dev.is_custom ? "font-weight:700; color:#4f46e5;" : "font-weight:500; color:#374151;";
+                    
+                    // STATUS BADGE (No Emojis)
+                    let statusBadge = dev.is_online 
+                        ? `<span style="background:#dcfce7; color:#166534; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">Online</span>`
+                        : `<span style="background:#fee2e2; color:#991b1b; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">Offline</span>`;
+
+                    const row = `
+                    <tr style="border-bottom: 1px solid #f3f4f6;">
+                        <td style="padding: 12px;">${statusBadge}</td>
+                        <td style="padding: 12px; ${nameStyle}">
+                            ${dev.vendor}
+                        </td>
+                        <td style="padding: 12px; color: #6b7280;">
+                            <a href="http://${dev.ip}" target="_blank" style="text-decoration:none; color:inherit; border-bottom:1px dotted #9ca3af;" title="Open Device Admin">
+                                ${dev.ip}
+                            </a>
+                        </td>
+                        <td style="padding: 12px; font-family:monospace; color: #6b7280;">${dev.mac}</td>
+                        <td style="padding: 12px; text-align: right;">
+                            <button onclick="renameDevice('${dev.mac}')" class="btn" style="width:auto; padding:5px 10px; background:#f3f4f6; color:#374151; border:1px solid #d1d5db; font-size:0.8rem;">
+                                Rename
+                            </button>
+                        </td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            } else {
+                tbody.innerHTML = "<tr><td colspan='5' style='padding:20px; text-align:center;'>No APs found via ARP.</td></tr>";
+            }
+        } catch (error) {
+            console.error(error);
+            tbody.innerHTML = "<tr><td colspan='5' style='padding:20px; text-align:center; color:red;'>Scan Failed.</td></tr>";
+        }
+    }
+
+    async function renameDevice(mac) {
+        let newName = prompt("Enter a label for this device (e.g., 'Kitchen AP'):");
+        if (newName !== null) { 
+            try {
+                let res = await fetch('/admin/rename_device', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ mac: mac, name: newName })
+                });
+                if((await res.json()).status === "success") loadAccessPoints();
+            } catch(e) { alert("Error saving name."); }
+        }
+    }
+
+    // --- 2. SCHEDULED RESTART LOGIC ---
     async function loadRestartSettings() {
         try {
             let res = await fetch('/admin/get_restart_schedule');
@@ -102,24 +191,25 @@
             const checkbox = document.getElementById('restartEnabled');
             const timeInput = document.getElementById('rebootTime');
 
-            checkbox.checked = data.enabled;
-            timeInput.value = data.time || "03:00";
+            if(checkbox) checkbox.checked = data.enabled;
+            if(timeInput) timeInput.value = data.time || "03:00";
             
             toggleRestartTime(data.enabled);
 
         } catch(e) { console.error("Failed to load schedule", e); }
     }
 
-    // 2. Toggle UI visibility
-    document.getElementById('restartEnabled').addEventListener('change', (e) => {
-        toggleRestartTime(e.target.checked);
-    });
-
-    function toggleRestartTime(show) {
-        document.getElementById('restartConfig').style.display = show ? 'block' : 'none';
+    if(document.getElementById('restartEnabled')) {
+        document.getElementById('restartEnabled').addEventListener('change', (e) => {
+            toggleRestartTime(e.target.checked);
+        });
     }
 
-    // 3. Save settings to backend
+    function toggleRestartTime(show) {
+        const el = document.getElementById('restartConfig');
+        if(el) el.style.display = show ? 'block' : 'none';
+    }
+
     async function saveRestartSchedule() {
         const btn = document.querySelector('button[onclick="saveRestartSchedule()"]');
         let originalText = btn.innerText;
@@ -145,18 +235,15 @@
 
             let result = await res.json();
             if(result.status === 'success') {
-                alert("✅ Schedule Saved Successfully!");
+                alert("Schedule Saved Successfully!");
             } else {
-                alert("❌ Error saving schedule");
+                alert("Error saving schedule");
             }
         } catch(e) {
-            alert("❌ Network Error");
+            alert("Network Error");
         }
         
         btn.innerText = originalText;
         btn.disabled = false;
     }
-
-    // Initialize logic when this script runs
-    loadRestartSettings();
 </script>

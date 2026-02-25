@@ -180,7 +180,7 @@
     <form action="/admin/update_settings" method="post">
         
         <div class="card">
-            <h3>🎁 Free Time Offer</h3>
+            <h3>Free Time Offer</h3>
             <div class="settings-grid">
                 <div class="input-group">
                     <label>Enable Free Trial</label>
@@ -205,7 +205,7 @@
         </div>
 
         <div class="card">
-            <h3>🚀 Speed Limiter</h3>
+            <h3>Speed Limiter</h3>
             <div class="settings-grid">
                 <div class="input-group">
                     <label>Global Limiter</label>
@@ -230,7 +230,7 @@
         </div>
 
         <div class="card">
-            <h3>⏸️ Auto Pause System</h3>
+            <h3>Auto Pause System</h3>
             <div class="settings-grid">
                 <div class="input-group">
                     <label>Auto Pause Inactive Users</label>
@@ -256,7 +256,7 @@
         </div>
 
         <div class="card">
-            <h3>🎮 Gaming Mode</h3>
+            <h3>Gaming Mode</h3>
             <div class="toggle-wrapper" style="width: auto; display: inline-flex; gap: 15px; padding: 0 20px;">
                 <label class="switch">
                     <input type="checkbox" name="gaming_mode" {% if gaming_mode_enabled %}checked{% endif %}>
@@ -278,7 +278,7 @@
     </form>
 
     <div class="card" style="margin-top: 25px;">
-        <h3>⭐ Loyalty Points System</h3>
+        <h3>Loyalty Points System</h3>
         <p class="text-muted" style="margin-bottom: 20px;">Configure points earned per coin and redemption promos.</p>
         
         <div class="settings-grid">
@@ -295,7 +295,7 @@
 
             <div class="input-group">
                 <label>1 Peso Coin (Points)</label>
-                <input type="number" id="pts_1" step="0.1" placeholder="0.5">
+                <input type="number" id="pts_1" step="0.1" placeholder="0.0">
             </div>
             <div class="input-group">
                 <label>5 Peso Coin (Points)</label>
@@ -387,7 +387,7 @@
 
             // Map coins
             let map = data.coin_map || {};
-            document.getElementById('pts_1').value = map["1"] || 0.5;
+            document.getElementById('pts_1').value = map["1"] || 0.0;
             document.getElementById('pts_5').value = map["5"] || 1;
             document.getElementById('pts_10').value = map["10"] || 3;
             document.getElementById('pts_20').value = map["20"] || 5;

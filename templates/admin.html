@@ -107,7 +107,7 @@
             <div class="hamburger" onclick="toggleSidebar()">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
             </div>
-            <div class="brand">⚡ PisoWifi Admin</div>
+            <div class="brand">PisoWifi Admin</div>
         </div>
         <div style="font-size: 0.9rem; color: #6b7280;">
             <span id="clock">--:--</span>
@@ -120,16 +120,16 @@
             <div class="nav-label">Main Menu</div>
             
             <div class="nav-item active" id="nav-home" onclick="showSection('home')">
-                <span class="nav-icon">📊</span> Dashboard
+                Dashboard
             </div>
             <div class="nav-item" id="nav-portal" onclick="showSection('portal')">
-                <span class="nav-icon">🎨</span> Captive Portal
+                Captive Portal
             </div>
             <div class="nav-item" id="nav-features" onclick="showSection('features')">
-                <span class="nav-icon">🚀</span> Features
+                Features
             </div>
             <div class="nav-item" id="nav-device" onclick="showSection('device')">
-                <span class="nav-icon">🖥️</span> Device Status
+                Device Status
             </div>
 
             <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -182,9 +182,14 @@
             if(sidebar.classList.contains('open')) toggleSidebar();
         }
 
-        // --- UPDATED: REFRESH DATA FOR DEVICE TAB ---
+        // --- UPDATED: TRIGGER SCAN ONLY WHEN DEVICE TAB IS ACTIVE ---
         if(sectionId === 'device') {
             updateSystemStats();
+            
+            // Only call these functions if we are actually on the device tab
+            if (typeof loadAccessPoints === 'function') {
+                loadAccessPoints();
+            }
             if (typeof loadRestartSettings === 'function') {
                 loadRestartSettings();
             }
@@ -253,7 +258,6 @@
                     btn.innerHTML = `<svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;animation:spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Rebooting...`;
                 }
 
-                // Add spinner animation style dynamically
                 const style = document.createElement('style');
                 style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
                 document.head.appendChild(style);

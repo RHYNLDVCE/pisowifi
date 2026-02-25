@@ -7,7 +7,6 @@ import time
 POSSIBLE_PINS = ["0", "1", "3", "4", "5", "6", "8", "9", "10", "13", "15", "16"]
 
 print("--- POWER PIN HUNTER ---")
-print("Watch your Coin Slot. Tell me which Pin makes it LIGHT UP.")
 print("------------------------------------------------")
 
 for pin in POSSIBLE_PINS:

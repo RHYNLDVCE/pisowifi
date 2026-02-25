@@ -39,12 +39,34 @@ defaults = {
 config = defaults.copy()
 
 def save_config():
+    """
+    Saves configuration safely using Atomic Write.
+    1. Writes to a .tmp file first.
+    2. Syncs to disk to ensure data is physically written.
+    3. Renames the .tmp file to the actual config file (Atomic operation).
+    """
+    temp_file = CONFIG_FILE + ".tmp"
     try:
-        with open(CONFIG_FILE, 'w') as f:
+        # 1. Write to temp file
+        with open(temp_file, 'w') as f:
             json.dump(config, f, indent=4)
+            # 2. Force write to disk (Critical for power loss protection)
+            f.flush()
+            os.fsync(f.fileno())
+        
+        # 3. Atomic Replace
+        # If power fails here, the old config.json is still perfect.
+        os.replace(temp_file, CONFIG_FILE)
         print("✅ Configuration saved to file.")
+        
     except Exception as e:
         print(f"❌ Error saving config: {e}")
+        # Clean up temp file if something went wrong
+        if os.path.exists(temp_file):
+            try:
+                os.remove(temp_file)
+            except:
+                pass
 
 def load_config():
     global config
@@ -55,6 +77,12 @@ def load_config():
                 for key, value in saved_config.items():
                     config[key] = value
             print("✅ Configuration loaded from file.")
+        except json.JSONDecodeError:
+            print("❌ Config file corrupted/empty. Loading defaults.")
+            # Optional: Rename corrupt file so we don't crash next time
+            try:
+                os.rename(CONFIG_FILE, CONFIG_FILE + ".corrupt")
+            except: pass
         except Exception as e:
             print(f"❌ Error loading config: {e}")
 

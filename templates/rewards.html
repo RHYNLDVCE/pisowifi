@@ -8,6 +8,8 @@
         --primary: #4f46e5;
         --secondary: #64748b;
         --accent: #f59e0b;
+        --success: #10b981;
+        --danger: #ef4444;
         --bg-color: #f8fafc;
     }
 
@@ -26,13 +28,14 @@
         flex-direction: column; 
         background: #ffffff;
         box-shadow: 0 0 25px rgba(0,0,0,0.05);
+        position: relative;
     }
     
     /* HEADER DESIGN */
     .header-card {
         background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
         color: white; 
-        padding: 40px 20px 55px; /* Extra bottom padding for overlap */
+        padding: 40px 20px 55px; 
         border-bottom-left-radius: 35px; 
         border-bottom-right-radius: 35px;
         text-align: center; 
@@ -72,7 +75,7 @@
     .content-area { 
         padding: 0 25px 40px; 
         flex-grow: 1; 
-        margin-top: -30px; /* Overlap effect */
+        margin-top: -30px; 
         position: relative;
         z-index: 20;
     }
@@ -153,11 +156,7 @@
         box-shadow: none; 
     }
     
-    /* Back Button Styling (Cleaner Look) */
-    .btn-back-wrapper {
-        margin-top: 35px;
-        text-align: center;
-    }
+    .btn-back-wrapper { margin-top: 35px; text-align: center; }
 
     .btn-back {
         display: inline-flex;
@@ -175,7 +174,7 @@
         transition: all 0.2s;
     }
     
-    .btn-back:hover, .btn-back:active { 
+    .btn-back:hover { 
         border-color: #cbd5e1; 
         background: #f8fafc;
         color: #334155;
@@ -191,6 +190,126 @@
         border: 2px dashed #e2e8f0;
         margin-top: 10px;
     }
+
+    /* --- NEW MODAL STYLES --- */
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    .modal-card {
+        background: white;
+        width: 85%;
+        max-width: 320px;
+        padding: 30px 25px;
+        border-radius: 28px;
+        text-align: center;
+        transform: translateY(20px) scale(0.95);
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-overlay.active .modal-card {
+        transform: translateY(0) scale(1);
+    }
+
+    .modal-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 40px;
+    }
+
+    /* Icon Types */
+    .icon-confirm { background: #fef3c7; color: #d97706; }
+    .icon-success { background: #d1fae5; color: #10b981; }
+    .icon-error { background: #fee2e2; color: #ef4444; }
+
+    .modal-title {
+        margin: 0 0 10px;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    .modal-text {
+        margin: 0 0 25px;
+        font-size: 1rem;
+        color: #64748b;
+        line-height: 1.5;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+    }
+
+    .btn-modal {
+        flex: 1;
+        padding: 14px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1rem;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+    .btn-modal:active { transform: scale(0.96); }
+
+    .btn-cancel { background: #f1f5f9; color: #64748b; }
+    .btn-confirm { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
+    .btn-success { background: var(--success); color: white; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); width: 100%; }
+
+    /* Animation for Success Icon */
+    .checkmark-circle {
+        stroke-dasharray: 166;
+        stroke-dashoffset: 166;
+        stroke-width: 2;
+        stroke-miterlimit: 10;
+        stroke: #10b981;
+        fill: none;
+        animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+    .checkmark {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: block;
+        stroke-width: 2;
+        stroke: #fff;
+        stroke-miterlimit: 10;
+        margin: 10% auto;
+        box-shadow: inset 0px 0px 0px #10b981;
+        animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+    }
+    .checkmark-check {
+        transform-origin: 50% 50%;
+        stroke-dasharray: 48;
+        stroke-dashoffset: 48;
+        animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+    }
+    @keyframes stroke { 100% { stroke-dashoffset: 0; } }
+    @keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }
+    @keyframes fill { 100% { box-shadow: inset 0px 0px 0px 30px #10b981; } }
 </style>
 {% endblock %}
 
@@ -233,7 +352,7 @@
                     data-id="{{ p.id }}" 
                     data-name="{{ p.name }}" 
                     data-cost="{{ p.cost | int }}"
-                    onclick="handleRedeem(this)"
+                    onclick="openConfirmModal(this)"
                     {% if points < p.cost %}disabled{% endif %}>
                     {% if points < p.cost %}
                         Locked
@@ -253,39 +372,107 @@
     </div>
 </div>
 
+<div id="rewardModal" class="modal-overlay">
+    <div class="modal-card">
+        <div id="modalContent"></div>
+    </div>
+</div>
+
 <script>
-    async function handleRedeem(btn) {
+    const modal = document.getElementById('rewardModal');
+    const modalContent = document.getElementById('modalContent');
+    let currentPromoId = null;
+
+    // 1. Show Confirmation
+    function openConfirmModal(btn) {
         const id = btn.getAttribute('data-id');
         const name = btn.getAttribute('data-name');
         const cost = btn.getAttribute('data-cost');
+        currentPromoId = parseInt(id);
 
-        if(!confirm(`Redeem "${name}" for ${cost} points?`)) return;
+        modalContent.innerHTML = `
+            <div class="modal-icon icon-confirm">🎁</div>
+            <h3 class="modal-title">Redeem Reward?</h3>
+            <p class="modal-text">
+                Are you sure you want to spend <b>${cost} points</b> to get <b>"${name}"</b>?
+            </p>
+            <div class="modal-actions">
+                <button class="btn-modal btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-modal btn-confirm" onclick="processRedemption()">Yes, Redeem</button>
+            </div>
+        `;
+        
+        modal.classList.add('active');
+    }
 
-        const originalText = btn.innerText;
-        btn.innerText = "Processing...";
-        btn.disabled = true;
+    // 2. Process & Show Success/Error
+    async function processRedemption() {
+        // Show Loading State
+        modalContent.innerHTML = `
+            <div class="modal-icon" style="background:transparent;">⏳</div>
+            <h3 class="modal-title">Processing...</h3>
+            <p class="modal-text">Please wait while we apply your reward.</p>
+        `;
 
         try {
             let res = await fetch('/redeem_points', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ promo_id: parseInt(id) })
+                body: JSON.stringify({ promo_id: currentPromoId })
             });
             let data = await res.json();
             
             if(data.status === "success") {
-                alert("🎉 Success! " + data.message);
-                window.location.reload();
+                showSuccess(data.message);
             } else {
-                alert("❌ Error: " + data.message);
-                btn.innerText = originalText;
-                btn.disabled = false;
+                showError(data.message);
             }
         } catch(e) {
-            alert("Network Error");
-            btn.innerText = originalText;
-            btn.disabled = false;
+            showError("Network connection failed.");
         }
     }
+
+    // 3. Success View
+    function showSuccess(msg) {
+        modalContent.innerHTML = `
+            <div class="modal-icon" style="background:transparent; height:auto; margin-bottom:10px;">
+                <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                    <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                </svg>
+            </div>
+            <h3 class="modal-title">Awesome!</h3>
+            <p class="modal-text">${msg}</p>
+            <div class="modal-actions">
+                <button class="btn-modal btn-success" onclick="finishRedemption()">Okay</button>
+            </div>
+        `;
+    }
+
+    // 4. Error View
+    function showError(msg) {
+        modalContent.innerHTML = `
+            <div class="modal-icon icon-error">⚠️</div>
+            <h3 class="modal-title">Oops!</h3>
+            <p class="modal-text">${msg}</p>
+            <div class="modal-actions">
+                <button class="btn-modal btn-cancel" onclick="closeModal()">Close</button>
+            </div>
+        `;
+    }
+
+    function closeModal() {
+        modal.classList.remove('active');
+    }
+
+    function finishRedemption() {
+        closeModal();
+        setTimeout(() => window.location.reload(), 300);
+    }
+
+    // Close on click outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
 </script>
 {% endblock %}
