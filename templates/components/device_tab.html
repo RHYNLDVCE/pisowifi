@@ -1,97 +1,118 @@
 <div id="device" class="section">
-    <h2>Device Hardware Status</h2>
+    <div style="margin-bottom: 24px;">
+        <h2 style="margin: 0; font-size: 1.5rem; color: var(--text-dark); letter-spacing: -0.02em;">Device Status</h2>
+        <p style="margin: 5px 0 0; color: var(--text-muted); font-size: 0.95rem;">Monitor hardware health, network interfaces, and connected access points.</p>
+    </div>
     
     <div class="stats-grid">
-        <div class="stat-card" style="border-left: 4px solid #3b82f6;">
-            <span class="stat-title">Download Speed</span>
+        <div class="stat-card" style="border-top: 3px solid #3b82f6;">
+            <span class="stat-title" style="display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="arrow-down-circle" style="width: 16px; height: 16px; color: #3b82f6;"></i> Download Speed
+            </span>
             <div class="stat-value" style="color: #3b82f6;"><span id="stat-wan-down">0 B/s</span></div>
-            <p style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">WAN (Internet)</p>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin: 5px 0 0;">WAN (Internet)</p>
         </div>
 
-        <div class="stat-card" style="border-left: 4px solid #f59e0b;">
-            <span class="stat-title">Upload Speed</span>
+        <div class="stat-card" style="border-top: 3px solid #f59e0b;">
+            <span class="stat-title" style="display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="arrow-up-circle" style="width: 16px; height: 16px; color: #f59e0b;"></i> Upload Speed
+            </span>
             <div class="stat-value" style="color: #f59e0b;"><span id="stat-wan-up">0 B/s</span></div>
-            <p style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">WAN (Internet)</p>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin: 5px 0 0;">WAN (Internet)</p>
         </div>
 
         <div class="stat-card">
-            <span class="stat-title">System Load (CPU)</span>
+            <span class="stat-title" style="display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="cpu" style="width: 16px; height: 16px;"></i> CPU Load
+            </span>
             <div class="stat-value"><span id="stat-cpu">0</span>%</div>
-            <p id="stat-temp" style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">Temp: --°C</p>
+            <p id="stat-temp" style="color: var(--text-muted); font-size: 0.8rem; margin: 5px 0 0;">Temp: --°C</p>
         </div>
 
         <div class="stat-card">
-            <span class="stat-title">Memory Usage</span>
+            <span class="stat-title" style="display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="memory-stick" style="width: 16px; height: 16px;"></i> Memory Usage
+            </span>
             <div class="stat-value"><span id="stat-ram">0</span>%</div>
-            <p id="stat-ram-detail" style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">Used: 0GB / Total: 0GB</p>
+            <p id="stat-ram-detail" style="color: var(--text-muted); font-size: 0.8rem; margin: 5px 0 0;">Used: 0GB / Total: 0GB</p>
         </div>
 
         <div class="stat-card">
-            <span class="stat-title">Up Time</span>
-            <div class="stat-value" style="font-size: 1.5rem;"><span id="stat-uptime">--</span></div>
-            <p style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">Since Last Boot</p>
-        </div>
-
-        <div class="stat-card">
-            <span class="stat-title">IP Addresses</span>
-            <div class="stat-value" style="font-size: 1.2rem; word-break: break-all; line-height: 1.3;"><span id="stat-ips">Loading...</span></div>
-            <p style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">Local Network</p>
-        </div>
-
-        <div class="stat-card">
-            <span class="stat-title">Usage of /</span>
+            <span class="stat-title" style="display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="hard-drive" style="width: 16px; height: 16px;"></i> Storage Use
+            </span>
             <div class="stat-value"><span id="stat-disk">0</span>%</div>
-            <p id="stat-disk-detail" style="color: #6b7280; font-size: 0.85rem; margin-top: 5px;">Free: 0GB</p>
+            <p id="stat-disk-detail" style="color: var(--text-muted); font-size: 0.8rem; margin: 5px 0 0;">Free: 0GB</p>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-title" style="display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="network" style="width: 16px; height: 16px;"></i> IP Addresses
+            </span>
+            <div class="stat-value" style="font-size: 1.1rem; word-break: break-all; line-height: 1.4;"><span id="stat-ips">Loading...</span></div>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin: 5px 0 0;">Local Network</p>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-title" style="display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="activity" style="width: 16px; height: 16px;"></i> Uptime
+            </span>
+            <div class="stat-value" style="font-size: 1.2rem;"><span id="stat-uptime">--</span></div>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin: 5px 0 0;">Since Last Boot</p>
         </div>
     </div>
 
     <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h3 style="margin:0;">Connected Access Points</h3>
-            <button onclick="loadAccessPoints()" class="btn btn-primary" style="width: auto; padding: 5px 15px; font-size: 0.85rem;">
-                Scan Status
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap: wrap; gap: 10px;">
+            <h3 style="margin:0; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="router" style="color: var(--primary);"></i> Connected Access Points
+            </h3>
+            <button onclick="loadAccessPoints()" class="btn btn-outline" style="width: auto; padding: 8px 16px; font-size: 0.85rem; border: 1px solid var(--card-border); background: #f8fafc; color: var(--text-dark);">
+                <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Scan Network
             </button>
         </div>
-        <p style="color: #6b7280; margin-bottom: 20px;">
-            Monitor your infrastructure. If a device is <span style="color:#ef4444; font-weight:bold;">Offline</span>, it may need a physical reboot.
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+            Monitor your infrastructure. If a device shows as <span style="color:#ef4444; font-weight:700;">Offline</span>, it may need a physical reboot.
         </p>
         
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+        <div style="overflow-x: auto; border: 1px solid var(--card-border); border-radius: 12px;">
+            <table style="width: 100%; border-collapse: collapse; min-width: 600px; text-align: left; font-size: 0.9rem;">
                 <thead>
-                    <tr style="border-bottom: 2px solid #f3f4f6; text-align: left;">
-                        <th style="padding: 12px; color: #6b7280; font-size: 0.85rem;">Status</th>
-                        <th style="padding: 12px; color: #6b7280; font-size: 0.85rem;">Device Name</th>
-                        <th style="padding: 12px; color: #6b7280; font-size: 0.85rem;">IP Address</th>
-                        <th style="padding: 12px; color: #6b7280; font-size: 0.85rem;">MAC Address</th>
-                        <th style="padding: 12px; color: #6b7280; font-size: 0.85rem; text-align: right;">Action</th>
+                    <tr style="background: #f8fafc; border-bottom: 1px solid var(--card-border);">
+                        <th style="padding: 16px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Status</th>
+                        <th style="padding: 16px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Device Name</th>
+                        <th style="padding: 16px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">IP Address</th>
+                        <th style="padding: 16px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">MAC Address</th>
+                        <th style="padding: 16px; text-align: right;"></th>
                     </tr>
                 </thead>
                 <tbody id="ap_table_body">
-                    <tr><td colspan="5" style="padding: 20px; text-align: center; color: #9ca3af;">Click Scan to check status...</td></tr>
+                    <tr><td colspan="5" style="padding: 30px; text-align: center; color: var(--text-muted);">Click Scan to check status...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <div class="card">
-        <h3>Scheduled Restart</h3>
-        <p style="color: #6b7280; margin-bottom: 20px;">
-            Automatically restart the system daily to clear RAM and ensure stability.
+        <h3 style="margin:0 0 5px; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="calendar-clock" style="color: var(--primary);"></i> Scheduled Restart
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+            Automatically restart the system daily to clear RAM and ensure peak stability.
         </p>
         
-        <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
-            <div class="toggle-wrapper">
+        <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center; background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid var(--card-border);">
+            <div class="toggle-wrapper" style="border: none; background: transparent; padding: 0;">
                 <label class="switch">
                     <input type="checkbox" id="restartEnabled">
                     <span class="slider"></span>
                 </label>
-                <span style="font-weight: 500; color: #374151;">Enable Daily Reboot</span>
+                <span style="font-weight: 600; color: var(--text-dark);">Enable Daily Reboot</span>
             </div>
 
-            <div id="restartConfig" style="display: none; animation: fadeIn 0.3s;">
-                <label style="font-size: 0.85rem; margin-bottom: 5px; color:#6b7280;">Reboot Time:</label>
-                <input type="time" id="rebootTime" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit;">
+            <div id="restartConfig" style="display: none; align-items: center; gap: 10px; animation: fadeIn 0.3s;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin: 0;">Time:</label>
+                <input type="time" id="rebootTime" style="width: auto; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 1rem;">
             </div>
 
             <button onclick="saveRestartSchedule()" class="btn btn-primary" style="width: auto; margin-left: auto;">
@@ -100,19 +121,23 @@
         </div>
     </div>
 
-    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-        <h3>System Actions</h3>
-        <p style="color: #6b7280; margin-bottom: 15px;">
-            Use this to restart the device if the system feels slow or network issues occur.
+    <div class="card" style="border-color: #fecaca; background: #fffcfc;">
+        <h3 style="margin:0 0 5px; color: #ef4444; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="alert-triangle"></i> Account & System
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+            System power controls and active session management.
         </p>
         
-        <button onclick="rebootDevice()" class="btn btn-danger" style="max-width: 200px; display: flex; align-items: center; justify-content: center; gap: 10px;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
-                <line x1="12" y1="2" x2="12" y2="12"></line>
-            </svg>
-            Reboot Device
-        </button>
+        <div style="display: flex; flex-direction: column; gap: 12px; max-width: 300px;">
+            <button onclick="rebootDevice()" class="btn btn-danger">
+                <i data-lucide="power" style="width: 18px; height: 18px;"></i> Reboot Device
+            </button>
+            
+            <a href="/logout" class="btn" style="background: #ffffff; border: 1px solid #fecaca; color: #ef4444; text-decoration: none; text-align: center;">
+                <i data-lucide="log-out" style="width: 18px; height: 18px;"></i> Sign Out of Admin
+            </a>
+        </div>
     </div>
 </div>
 
@@ -120,7 +145,8 @@
     // --- 1. ACCESS POINT SCANNER ---
     async function loadAccessPoints() {
         const tbody = document.getElementById("ap_table_body");
-        tbody.innerHTML = "<tr><td colspan='5' style='padding:20px; text-align:center;'>Scanning & Pinging Devices... (Please Wait)</td></tr>";
+        tbody.innerHTML = "<tr><td colspan='5' style='padding:30px; text-align:center; color: var(--text-muted);'><i data-lucide='loader-2' class='lucide-spin' style='width: 24px; height: 24px; animation: spin 1s linear infinite; margin-bottom: 8px;'></i><br>Scanning & Pinging Devices...</td></tr>";
+        if(typeof lucide !== 'undefined') lucide.createIcons();
 
         try {
             const res = await fetch("/admin/get_infrastructure_devices");
@@ -130,44 +156,41 @@
 
             if (data.devices && data.devices.length > 0) {
                 data.devices.forEach(dev => {
-                    let nameStyle = dev.is_custom ? "font-weight:700; color:#4f46e5;" : "font-weight:500; color:#374151;";
+                    let nameStyle = dev.is_custom ? "font-weight:700; color:var(--primary);" : "font-weight:600; color:var(--text-dark);";
                     
-                    // STATUS BADGE (No Emojis)
                     let statusBadge = dev.is_online 
-                        ? `<span style="background:#dcfce7; color:#166534; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">Online</span>`
-                        : `<span style="background:#fee2e2; color:#991b1b; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">Offline</span>`;
+                        ? `<span style="background:#dcfce7; color:#166534; padding:6px 12px; border-radius:99px; font-size:0.75rem; font-weight:700; display:inline-flex; align-items:center; gap:6px;"><span style="width:6px;height:6px;border-radius:50%;background:#166534;"></span>Online</span>`
+                        : `<span style="background:#fee2e2; color:#991b1b; padding:6px 12px; border-radius:99px; font-size:0.75rem; font-weight:700; display:inline-flex; align-items:center; gap:6px;"><span style="width:6px;height:6px;border-radius:50%;background:#991b1b;"></span>Offline</span>`;
 
                     const row = `
-                    <tr style="border-bottom: 1px solid #f3f4f6;">
-                        <td style="padding: 12px;">${statusBadge}</td>
-                        <td style="padding: 12px; ${nameStyle}">
-                            ${dev.vendor}
-                        </td>
-                        <td style="padding: 12px; color: #6b7280;">
-                            <a href="http://${dev.ip}" target="_blank" style="text-decoration:none; color:inherit; border-bottom:1px dotted #9ca3af;" title="Open Device Admin">
+                    <tr style="border-bottom: 1px solid var(--card-border); transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                        <td style="padding: 16px;">${statusBadge}</td>
+                        <td style="padding: 16px; ${nameStyle}">${dev.vendor}</td>
+                        <td style="padding: 16px; color: var(--text-muted); font-weight: 500;">
+                            <a href="http://${dev.ip}" target="_blank" style="text-decoration:none; color:inherit; border-bottom:1px dotted #cbd5e1; padding-bottom: 1px;" title="Open Device Admin">
                                 ${dev.ip}
                             </a>
                         </td>
-                        <td style="padding: 12px; font-family:monospace; color: #6b7280;">${dev.mac}</td>
-                        <td style="padding: 12px; text-align: right;">
-                            <button onclick="renameDevice('${dev.mac}')" class="btn" style="width:auto; padding:5px 10px; background:#f3f4f6; color:#374151; border:1px solid #d1d5db; font-size:0.8rem;">
-                                Rename
+                        <td style="padding: 16px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: var(--text-muted); font-size: 0.85rem;">${dev.mac}</td>
+                        <td style="padding: 16px; text-align: right;">
+                            <button onclick="renameDevice('${dev.mac}')" class="btn" style="width:auto; padding:6px 12px; background:#f1f5f9; color:var(--text-dark); border:none; font-size:0.8rem;">
+                                Edit Name
                             </button>
                         </td>
                     </tr>`;
                     tbody.innerHTML += row;
                 });
             } else {
-                tbody.innerHTML = "<tr><td colspan='5' style='padding:20px; text-align:center;'>No APs found via ARP.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='5' style='padding:30px; text-align:center; color: var(--text-muted);'>No Access Points found on the network.</td></tr>";
             }
         } catch (error) {
             console.error(error);
-            tbody.innerHTML = "<tr><td colspan='5' style='padding:20px; text-align:center; color:red;'>Scan Failed.</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='5' style='padding:30px; text-align:center; color: #ef4444;'>Network Scan Failed.</td></tr>";
         }
     }
 
     async function renameDevice(mac) {
-        let newName = prompt("Enter a label for this device (e.g., 'Kitchen AP'):");
+        let newName = prompt("Enter a label for this device (e.g., 'Main Router' or 'Kitchen AP'):");
         if (newName !== null) { 
             try {
                 let res = await fetch('/admin/rename_device', {
@@ -207,13 +230,14 @@
 
     function toggleRestartTime(show) {
         const el = document.getElementById('restartConfig');
-        if(el) el.style.display = show ? 'block' : 'none';
+        if(el) el.style.display = show ? 'flex' : 'none';
     }
 
     async function saveRestartSchedule() {
         const btn = document.querySelector('button[onclick="saveRestartSchedule()"]');
-        let originalText = btn.innerText;
-        btn.innerText = "Saving...";
+        let originalText = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 18px; height: 18px; animation: spin 1s linear infinite;"></i> Saving...`;
+        if(typeof lucide !== 'undefined') lucide.createIcons();
         btn.disabled = true;
 
         let enabled = document.getElementById('restartEnabled').checked;
@@ -221,7 +245,7 @@
 
         if (enabled && !time) {
             alert("Please select a time for the reboot.");
-            btn.innerText = originalText;
+            btn.innerHTML = originalText;
             btn.disabled = false;
             return;
         }
@@ -243,7 +267,8 @@
             alert("Network Error");
         }
         
-        btn.innerText = originalText;
+        btn.innerHTML = originalText;
         btn.disabled = false;
+        if(typeof lucide !== 'undefined') lucide.createIcons();
     }
 </script>

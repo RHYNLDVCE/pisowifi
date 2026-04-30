@@ -1,186 +1,110 @@
 <style>
-    /* --- UNIFIED FORM STYLES --- */
-    .input-group input, 
-    .toggle-wrapper {
-        height: 48px; 
-        width: 100%;
-        border: 1px solid #d1d5db; 
-        border-radius: 8px; 
-        box-sizing: border-box; 
-        font-size: 1rem;
-        background: #ffffff;
-    }
+    /* --- PROMO ITEM STYLES (Upgraded for SaaS look) --- */
 
-    .input-group input {
-        padding: 0 15px;
-        color: #1f2937;
-    }
-
-    .toggle-wrapper {
-        display: flex;
-        align-items: center; 
-        justify-content: space-between; 
-        padding: 0 15px;
-        background: #f9fafb;
-    }
-
-    .toggle-status {
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: #4b5563;
-        line-height: 1; 
-    }
-
-    /* Switch Label */
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: 44px;
-        height: 24px;
-        margin: 0; 
-        flex-shrink: 0;
-        vertical-align: middle; 
-    }
-
-    .switch input { 
-        position: absolute; 
-        opacity: 0; 
-        width: 0; 
-        height: 0; 
-        margin: 0;
-    }
-
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-color: #cbd5e1;
-        transition: .3s;
-        border-radius: 34px;
-    }
-
-    .slider:before {
-        position: absolute;
-        content: "";
-        height: 18px;
-        width: 18px;
-        left: 3px;
-        bottom: 3px; 
-        background-color: white;
-        transition: .3s;
-        border-radius: 50%;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-    }
-
-    input:checked + .slider { background-color: #4f46e5; }
-    input:checked + .slider:before { transform: translateX(20px); }
-
-    /* --- RESPONSIVE GRID FOR SETTINGS --- */
-    .settings-grid {
+    .points-grid-custom {
         display: grid;
-        grid-template-columns: 1fr 1fr; 
-        gap: 15px;
+        grid-template-columns: repeat(2, minmax(0, 1fr)); /* Forces exactly 50/50 split */
+        gap: 16px;
+        background: #f8fafc; 
+        padding: 20px; 
+        border-radius: 12px; 
+        border: 1px solid var(--card-border); 
+        margin-bottom: 25px;
     }
-
-    /* --- PROMO ITEM STYLES --- */
+    
     .promo-item {
         display: flex;
-        gap: 15px; /* Increased gap for better spacing */
-        align-items: flex-end; /* Aligns inputs to bottom so labels don't offset buttons */
-        background: #f8fafc;
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid #e5e7eb;
-        transition: background 0.2s;
+        gap: 16px; 
+        align-items: flex-end; 
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid var(--card-border);
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .promo-item:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: #cbd5e1;
     }
     
     .promo-label {
         font-size: 0.75rem;
-        color: #6b7280;
-        font-weight: 600;
+        color: var(--text-muted);
+        font-weight: 700;
         text-transform: uppercase;
-        margin-bottom: 5px;
+        margin-bottom: 6px;
         display: block;
         letter-spacing: 0.05em;
     }
 
     .promo-input-name {
         width: 100%;
-        padding: 8px 12px; 
+        padding: 10px 14px; 
         border: 1px solid #d1d5db; 
-        border-radius: 6px;
+        border-radius: 8px;
         font-size: 0.95rem;
+        transition: border-color 0.2s;
+        font-family: inherit;
     }
+    .promo-input-name:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
 
     .promo-stats-row {
         display: flex;
-        gap: 10px;
-        align-items: flex-end; /* Align inputs and button at the bottom */
+        gap: 12px;
+        align-items: flex-end; 
     }
 
     .promo-input-small {
-        width: 80px; 
-        padding: 8px; 
+        width: 90px; 
+        padding: 10px 14px; 
         border: 1px solid #d1d5db; 
-        border-radius: 6px;
+        border-radius: 8px;
         text-align: center;
         font-size: 0.95rem;
+        transition: border-color 0.2s;
+        font-family: inherit;
     }
+    .promo-input-small:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
 
     .btn-delete {
-        background: #fee2e2; 
+        background: #fef2f2; 
         color: #ef4444; 
         border: 1px solid #fecaca; 
-        width: 38px; /* Slightly larger for easier tapping */
-        height: 38px;
-        border-radius: 6px; 
+        width: 44px; 
+        height: 44px;
+        border-radius: 8px; 
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.2rem;
         flex-shrink: 0;
         transition: all 0.2s;
     }
-    .btn-delete:hover { background: #fecaca; }
+    .btn-delete:hover { background: #fee2e2; color: #dc2626; }
 
     /* --- MOBILE MEDIA QUERY (Max-width 768px) --- */
     @media (max-width: 768px) {
-        .settings-grid {
-            grid-template-columns: 1fr !important; 
-        }
-        
-        .settings-grid > [style*="grid-column: span 2"] {
-            grid-column: span 1 !important;
-        }
-
-        /* Promo Item Mobile Layout */
-        .promo-item {
-            flex-direction: column; 
-            align-items: stretch;
-            gap: 15px;
-        }
-
-        .promo-stats-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr auto; /* Points | Time | Delete */
-            width: 100%;
-            gap: 10px;
-        }
-
-        .promo-input-small {
-            width: 100%; 
-        }
+        .promo-item { flex-direction: column; align-items: stretch; gap: 16px; padding: 16px; }
+        .promo-stats-row { display: grid; grid-template-columns: 1fr 1fr auto; width: 100%; gap: 10px; }
+        .promo-input-small { width: 100%; }
+        .btn-delete { width: 100%; height: 48px; }
     }
 </style>
 
 <div id="features" class="section">
-    <h2>Network Features</h2>
+    <div style="margin-bottom: 24px;">
+        <h2 style="margin: 0; font-size: 1.5rem; color: var(--text-dark); letter-spacing: -0.02em;">Network Features</h2>
+        <p style="margin: 5px 0 0; color: var(--text-muted); font-size: 0.95rem;">Manage connectivity rules, free trials, and customer loyalty programs.</p>
+    </div>
     
     <form action="/admin/update_settings" method="post">
         
         <div class="card">
-            <h3>Free Time Offer</h3>
+            <h3 style="margin:0 0 20px; display: flex; align-items: center; gap: 8px; color: var(--text-dark);">
+                <i data-lucide="gift" style="color: #8b5cf6;"></i> Free Time Offer
+            </h3>
             <div class="settings-grid">
                 <div class="input-group">
                     <label>Enable Free Trial</label>
@@ -199,13 +123,15 @@
                 <div class="input-group">
                     <label>Duration (Minutes)</label>
                     <input type="number" id="free_input" name="free_time_duration" value="{{ free_time_duration }}"
-                           {% if not free_time_enabled %}readonly style="background-color: #f3f4f6; color: #9ca3af; cursor: not-allowed;"{% endif %}>
+                           {% if not free_time_enabled %}readonly style="background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed;"{% endif %}>
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <h3>Speed Limiter</h3>
+            <h3 style="margin:0 0 20px; display: flex; align-items: center; gap: 8px; color: var(--text-dark);">
+                <i data-lucide="gauge" style="color: #3b82f6;"></i> Speed Limiter
+            </h3>
             <div class="settings-grid">
                 <div class="input-group">
                     <label>Global Limiter</label>
@@ -224,13 +150,15 @@
                 <div class="input-group">
                     <label>Max Speed (Mbps)</label>
                     <input type="number" id="speed_input" name="speed_limit_val" value="{{ global_speed_limit }}"
-                           {% if not speed_limit_enabled %}readonly style="background-color: #f3f4f6; color: #9ca3af; cursor: not-allowed;"{% endif %}>
+                           {% if not speed_limit_enabled %}readonly style="background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed;"{% endif %}>
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <h3>Auto Pause System</h3>
+            <h3 style="margin:0 0 20px; display: flex; align-items: center; gap: 8px; color: var(--text-dark);">
+                <i data-lucide="pause-circle" style="color: #f59e0b;"></i> Auto Pause System
+            </h3>
             <div class="settings-grid">
                 <div class="input-group">
                     <label>Auto Pause Inactive Users</label>
@@ -249,15 +177,17 @@
                 <div class="input-group">
                     <label>Inactive Timeout (Seconds)</label>
                     <input type="number" id="pause_input" name="inactive_timeout" value="{{ inactive_timeout }}"
-                           {% if not auto_pause_enabled %}readonly style="background-color: #f3f4f6; color: #9ca3af; cursor: not-allowed;"{% endif %}>
-                    <p style="color:#6b7280; font-size:0.8rem; margin-top:5px;">Time before an idle user is paused.</p>
+                           {% if not auto_pause_enabled %}readonly style="background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed;"{% endif %}>
+                    <p style="color:var(--text-muted); font-size:0.8rem; margin-top:6px;">Time before an idle user is paused automatically.</p>
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <h3>Gaming Mode</h3>
-            <div class="toggle-wrapper" style="width: auto; display: inline-flex; gap: 15px; padding: 0 20px;">
+            <h3 style="margin:0 0 20px; display: flex; align-items: center; gap: 8px; color: var(--text-dark);">
+                <i data-lucide="gamepad-2" style="color: #ec4899;"></i> Gaming Mode
+            </h3>
+            <div class="toggle-wrapper" style="width: auto; display: inline-flex; gap: 15px; padding: 12px 20px;">
                 <label class="switch">
                     <input type="checkbox" name="gaming_mode" {% if gaming_mode_enabled %}checked{% endif %}>
                     <span class="slider"></span>
@@ -266,7 +196,7 @@
                     {% if gaming_mode_enabled %}Enabled{% else %}Disabled{% endif %}
                 </span>
             </div>
-            <p style="color:#6b7280; font-size:0.9rem; margin-top:10px;">Prioritizes UDP traffic for gaming.</p>
+            <p style="color:var(--text-muted); font-size:0.9rem; margin-top:12px;">Prioritizes UDP traffic to ensure low latency for online games.</p>
         </div>
 
         <input type="hidden" name="banner_text" value="{{ banner_text }}">
@@ -274,17 +204,21 @@
         <input type="hidden" name="coin_rates" value="{{ coin_rates }}">
         <input type="hidden" name="timeout" value="{{ slot_timeout }}">
 
-        <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Save Network Settings</button>
+        <button type="submit" class="btn btn-primary" style="margin-bottom: 30px;">
+            <i data-lucide="save"></i> Save Network Settings
+        </button>
     </form>
 
-    <div class="card" style="margin-top: 25px;">
-        <h3>Loyalty Points System</h3>
-        <p class="text-muted" style="margin-bottom: 20px;">Configure points earned per coin and redemption promos.</p>
+<div class="card" style="border: 2px solid #eef2ff;">
+        <h3 style="margin:0 0 5px; display: flex; align-items: center; gap: 8px; color: var(--text-dark);">
+            <i data-lucide="award" style="color: #f59e0b;"></i> Loyalty Points System
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 25px;">Configure points earned per coin inserted and create redemption promos.</p>
         
-        <div class="settings-grid">
-            <div class="input-group" style="grid-column: span 2;">
+        <div class="points-grid-custom">
+            <div class="input-group" style="grid-column: 1 / -1; margin-bottom: 5px;">
                 <label>Enable Rewards System</label>
-                <div class="toggle-wrapper">
+                <div class="toggle-wrapper" style="background: white;">
                     <label class="switch">
                         <input type="checkbox" id="pointsEnabled" onchange="togglePointsInput()">
                         <span class="slider"></span>
@@ -294,34 +228,39 @@
             </div>
 
             <div class="input-group">
-                <label>1 Peso Coin (Points)</label>
+                <label>₱1 Coin</label>
                 <input type="number" id="pts_1" step="0.1" placeholder="0.0">
             </div>
             <div class="input-group">
-                <label>5 Peso Coin (Points)</label>
+                <label>₱5 Coin</label>
                 <input type="number" id="pts_5" step="0.1" placeholder="1">
             </div>
             <div class="input-group">
-                <label>10 Peso Coin (Points)</label>
+                <label>₱10 Coin</label>
                 <input type="number" id="pts_10" step="0.1" placeholder="3">
             </div>
             <div class="input-group">
-                <label>20 Peso Coin (Points)</label>
+                <label>₱20 Coin</label>
                 <input type="number" id="pts_20" step="0.1" placeholder="5">
             </div>
         </div>
 
-        <h4 style="margin-top: 25px; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
-            Redemption Promos
-            <button type="button" class="btn btn-outline" style="width: auto; padding: 6px 12px; font-size: 0.85rem;" onclick="addPromoItem()">+ Add Promo</button>
-        </h4>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin: 30px 0 15px; flex-wrap: wrap; gap: 10px;">
+            <h4 style="margin:0; font-size: 1.1rem; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="ticket"></i> Redemption Promos
+            </h4>
+            <button type="button" class="btn btn-outline" style="width: auto; padding: 8px 16px; font-size: 0.85rem; border: 1px solid var(--card-border); background: #f8fafc; color: var(--text-dark);" onclick="addPromoItem()">
+                <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Add Promo
+            </button>
+        </div>
         
-        <div id="promosList" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-            </div>
+        <div id="promosList" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px;">
+        </div>
 
-        <button type="button" class="btn btn-primary" onclick="savePointsConfig()">Save Points Configuration</button>
+        <button type="button" class="btn btn-primary" onclick="savePointsConfig()" style="background: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+            <i data-lucide="check-circle"></i> Save Points Configuration
+        </button>
     </div>
-
 </div>
 
 <script>
@@ -335,23 +274,23 @@
             if(input) {
                 input.readOnly = false;
                 input.style.backgroundColor = '#ffffff'; 
-                input.style.color = '#1f2937';
+                input.style.color = '#0f172a';
                 input.style.cursor = 'text';
             }
             if(status) {
                 status.innerText = 'Enabled';
-                status.style.color = '#4f46e5';
+                status.style.color = 'var(--primary)';
             }
         } else {
             if(input) {
                 input.readOnly = true;
-                input.style.backgroundColor = '#f3f4f6'; 
-                input.style.color = '#9ca3af'; 
+                input.style.backgroundColor = '#f1f5f9'; 
+                input.style.color = '#94a3b8'; 
                 input.style.cursor = 'not-allowed';
             }
             if(status) {
                 status.innerText = 'Disabled';
-                status.style.color = '#6b7280';
+                status.style.color = 'var(--text-muted)';
             }
         }
     }
@@ -368,10 +307,10 @@
         var st = document.getElementById("points_status");
         if(chk.checked) {
             st.innerText = "Enabled";
-            st.style.color = "#4f46e5";
+            st.style.color = "var(--primary)";
         } else {
             st.innerText = "Disabled";
-            st.style.color = "#6b7280";
+            st.style.color = "var(--text-muted)";
         }
     }
 
@@ -380,12 +319,10 @@
             let res = await fetch('/admin/get_points_config');
             let data = await res.json();
             
-            // Set Toggle
             let chk = document.getElementById('pointsEnabled');
             chk.checked = data.enabled;
             togglePointsInput();
 
-            // Map coins
             let map = data.coin_map || {};
             document.getElementById('pts_1').value = map["1"] || 0.0;
             document.getElementById('pts_5').value = map["5"] || 1;
@@ -397,11 +334,19 @@
         } catch(e) { console.error(e); }
     }
 
-    // --- UPDATED RENDER FUNCTION WITH LABELS ---
     function renderPromos() {
         const container = document.getElementById('promosList');
         container.innerHTML = "";
         
+        if (currentPromos.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 30px; border: 1px dashed var(--card-border); border-radius: 12px; background: #f8fafc; color: var(--text-muted);">
+                    <p style="margin: 0;">No active promos. Click 'Add Promo' to create one.</p>
+                </div>
+            `;
+            return;
+        }
+
         currentPromos.forEach((promo, index) => {
             let div = document.createElement('div');
             div.className = "promo-item"; 
@@ -441,13 +386,18 @@
                                 class="btn-delete" 
                                 onclick="removePromo(${index})"
                                 title="Remove Promo">
-                            ×
+                            <i data-lucide="trash-2" style="width: 20px; height: 20px;"></i>
                         </button>
                     </div>
                 </div>
             `;
             container.appendChild(div);
         });
+
+        // Re-initialize icons for newly created DOM elements
+        if(typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     }
 
     function addPromoItem() {
@@ -467,9 +417,10 @@
     }
 
     async function savePointsConfig() {
-        const btn = event.target;
-        const originalText = btn.innerText;
-        btn.innerText = "Saving...";
+        const btn = event.currentTarget;
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 18px; height: 18px; animation: spin 1s linear infinite;"></i> Saving...`;
+        if(typeof lucide !== 'undefined') lucide.createIcons();
         btn.disabled = true;
 
         let coinMap = {
@@ -498,10 +449,13 @@
             alert("Network Error");
         }
         
-        btn.innerText = originalText;
+        btn.innerHTML = originalHtml;
         btn.disabled = false;
+        if(typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     // Initialize
-    loadPointsConfig();
+    document.addEventListener("DOMContentLoaded", () => {
+        loadPointsConfig();
+    });
 </script>

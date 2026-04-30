@@ -4,13 +4,13 @@
     "inactive_timeout": 300,
     "auto_pause_enabled": true,
     "speed_limit_enabled": true,
-    "global_speed_limit": 16,
+    "global_speed_limit": 10,
     "gaming_mode_enabled": true,
     "inactive_packet_threshold": 5,
     "coin_rates": "1:12,5:70,10:181,20:481",
     "pulse_value": 1,
     "restart_schedule": {
-        "enabled": true,
+        "enabled": false,
         "time": "03:05"
     },
     "points_enabled": true,
@@ -23,23 +23,29 @@
     "point_promos": [
         {
             "id": 1,
-            "name": "1hour",
+            "name": "1 Hour",
             "cost": 20.0,
             "minutes": 60
         },
         {
             "id": 1768609763541,
-            "name": "5 hours",
+            "name": "5 Hours",
             "cost": 70.0,
             "minutes": 300
+        },
+        {
+            "id": 1773460229219,
+            "name": "8 Hours 30 mins",
+            "cost": 150.0,
+            "minutes": 510
         }
     ],
     "inactive_bytes_threshold": 500,
-    "banner_text": "Open Jellyfin",
-    "banner_link": "http://192.168.0.166:8096/",
+    "banner_text": "Watch Movies and Anime",
+    "banner_link": "http://192.168.20.166:8096/",
     "banner_order": [
-        "MLBB-Sora2-1125x633.jpg",
-        "Screenshot From 2026-01-31 06-55-45.png"
+        "marcel.webp",
+        "jellyfin.webp"
     ],
     "free_time_enabled": false,
     "free_time_duration": 0,

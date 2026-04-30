@@ -1,0 +1,529 @@
+{% extends "base.html" %}
+
+{% block title %}Manage User - {{ mac }}{% endblock %}
+
+{% block styles %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --success: #10b981;
+        --success-hover: #059669;
+        --warning: #f59e0b;
+        --warning-hover: #d97706;
+        --danger: #ef4444;
+        --danger-hover: #dc2626;
+        --info: #3b82f6;
+        --text-dark: #0f172a;
+        --text-muted: #64748b;
+        --bg-light: #f8fafc;
+        --card-border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        background-color: var(--bg-light);
+        color: var(--text-dark);
+        -webkit-font-smoothing: antialiased;
+        margin: 0;
+    }
+
+    .page-container { 
+        max-width: 768px; /* Slightly narrower for better reading focus */
+        margin: 40px auto; 
+        padding: 0 24px; 
+    }
+
+    /* --- NAVIGATION --- */
+    .back-link { 
+        display: inline-flex; 
+        align-items: center; 
+        gap: 8px; 
+        color: var(--text-muted); 
+        text-decoration: none; 
+        font-weight: 600; 
+        margin-bottom: 24px; 
+        transition: color 0.2s ease;
+        font-size: 0.95rem;
+    }
+    .back-link:hover { color: var(--text-dark); }
+    
+    /* --- MAIN CARD --- */
+    .card { 
+        background: #ffffff; 
+        border-radius: 16px; 
+        border: 1px solid var(--card-border); 
+        box-shadow: var(--shadow-sm); 
+        overflow: hidden; 
+        margin-bottom: 25px; 
+    }
+    
+    .card-header { 
+        background: #ffffff; 
+        padding: 24px 30px; 
+        border-bottom: 1px solid var(--card-border); 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: flex-start; 
+        gap: 15px;
+    }
+    
+    .card-body { padding: 30px; }
+
+    .mac-title {
+        margin: 0; 
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; 
+        color: var(--text-dark);
+        word-break: break-all;
+        font-size: 1.5rem;
+        letter-spacing: -0.02em;
+    }
+    
+    .info-grid { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+        gap: 16px; 
+        margin-bottom: 30px; 
+    }
+    
+    .info-box { 
+        background: var(--bg-light); 
+        padding: 24px; 
+        border-radius: 12px; 
+        border: 1px solid var(--card-border);
+    }
+    
+    .info-label { 
+        font-size: 0.75rem; 
+        color: var(--text-muted); 
+        text-transform: uppercase; 
+        font-weight: 700; 
+        letter-spacing: 0.05em;
+        margin-bottom: 8px; 
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .info-value { 
+        font-size: 1.5rem; 
+        font-weight: 800; 
+        color: var(--text-dark); 
+    }
+
+    /* --- ACTION PANELS (Forms) --- */
+    .action-grid { 
+        display: grid; 
+        grid-template-columns: 1fr 1fr; 
+        gap: 20px; 
+    }
+    
+    .action-panel { 
+        border: 1px solid var(--card-border); 
+        padding: 24px; 
+        border-radius: 12px; 
+        background: #ffffff;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .action-panel h4 { 
+        margin-top: 0; 
+        margin-bottom: 20px; 
+        color: var(--text-dark); 
+        display: flex; 
+        align-items: center; 
+        gap: 8px;
+        font-size: 1.1rem;
+    }
+    
+    .input-row { display: flex; gap: 12px; margin-bottom: 16px; }
+    
+    .form-input { 
+        padding: 12px 16px; 
+        border: 1px solid #d1d5db; 
+        border-radius: 10px; 
+        width: 100%; 
+        font-size: 1rem; 
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background: #fff;
+        font-family: inherit;
+        height: 48px;
+    }
+
+    .form-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    input.form-input { flex: 1; min-width: 0; }
+    select.form-input { width: 110px; flex-shrink: 0; }
+    
+    /* --- BUTTONS --- */
+    .btn { 
+        padding: 12px 16px; 
+        border: none; 
+        border-radius: 10px; 
+        font-weight: 700; 
+        cursor: pointer; 
+        width: 100%; 
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s ease; 
+        font-size: 0.95rem;
+        font-family: inherit;
+        height: 48px;
+    }
+    .btn:active { transform: scale(0.98); }
+
+    .btn-add { background: var(--success); color: white; }
+    .btn-add:hover { background: var(--success-hover); }
+    
+    .btn-deduct { background: #f1f5f9; color: var(--text-dark); border: 1px solid #cbd5e1; }
+    .btn-deduct:hover { background: #e2e8f0; }
+    
+    .btn-block { background: #fff1f2; color: var(--danger); border: 1px solid #fecdd3; }
+    .btn-block:hover { background: #ffe4e6; }
+    
+    .btn-unblock { background: var(--success); color: white; }
+    .btn-unblock:hover { background: var(--success-hover); }
+    
+    .btn-delete { background: var(--danger); color: white; }
+    .btn-delete:hover { background: var(--danger-hover); }
+
+    .button-group { display: flex; gap: 12px; width: 100%; }
+    .button-group .btn { flex: 1; }
+    
+    /* --- STATUS BADGES --- */
+    .status-badge { 
+        padding: 6px 16px; 
+        border-radius: 9999px; 
+        font-size: 0.8rem; 
+        font-weight: 700; 
+        text-transform: uppercase; 
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .status-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+    
+    .status-connected { background:#dcfce7; color:#166534; border: 1px solid #bbf7d0; }
+    .status-connected::before { background: #166534; }
+    
+    .status-blocked { background:#fee2e2; color:#991b1b; border: 1px solid #fecaca; }
+    .status-blocked::before { background: #991b1b; }
+    
+    .status-expired { background:#f1f5f9; color:#475569; border: 1px solid #e2e8f0; }
+    .status-expired::before { background: #475569; }
+    
+    /* --- TIMELINE --- */
+    .history-section {
+        margin-top: 40px; 
+        border-top: 1px solid var(--card-border); 
+        padding-top: 30px;
+    }
+
+    .timeline { 
+        border-left: 2px solid var(--card-border); 
+        padding-left: 20px; 
+        margin-top: 20px; 
+        margin-left: 8px; 
+    }
+    
+    .timeline-item { position: relative; margin-bottom: 24px; }
+    .timeline-item:last-child { margin-bottom: 0; }
+    
+    .timeline-item::before {
+        content: ''; position: absolute; left: -27px; top: 4px;
+        width: 12px; height: 12px; border-radius: 50%;
+        background: var(--success); border: 2px solid white; 
+        box-shadow: 0 0 0 2px var(--success);
+    }
+    
+    .timeline-date { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+    
+    .timeline-content { font-size: 0.95rem; color: var(--text-dark); font-weight: 500; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    
+    .amount-badge { background: #ecfdf5; color: #065f46; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.95rem; border: 1px solid #a7f3d0; }
+    
+    .timeline-scroll { max-height: 250px; overflow-y: auto; padding-right: 8px; margin-top: 16px; }
+    .timeline-scroll::-webkit-scrollbar { width: 6px; }
+    .timeline-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    
+    /* --- BOTTOM ACTIONS --- */
+    .bottom-actions {
+        margin-top: 40px; 
+        background: #f8fafc;
+        border: 1px dashed var(--card-border); 
+        border-radius: 12px;
+        padding: 24px; 
+        display: flex; 
+        gap: 16px;
+    }
+
+    /* -------------------------------------- */
+    /* MOBILE NATIVE EDGE-TO-EDGE LAYOUT      */
+    /* -------------------------------------- */
+    @media (max-width: 768px) {
+        .action-grid { grid-template-columns: 1fr; } 
+    }
+
+    @media (max-width: 550px) {
+        body { background: #ffffff; } /* Matches card background on mobile */
+        
+        .page-container { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .back-link { 
+            margin: 20px 20px 10px 20px; 
+            font-size: 1rem;
+        }
+
+        .card { 
+            border-radius: 0; 
+            border-left: none;
+            border-right: none;
+            border-top: 1px solid var(--card-border);
+            border-bottom: 1px solid var(--card-border);
+            box-shadow: none; 
+            margin-bottom: 0; 
+        }
+
+        .card-header { 
+            flex-direction: column; 
+            gap: 12px; 
+            padding: 20px; 
+            align-items: flex-start;
+        }
+
+        .card-body { padding: 20px; }
+        
+        /* Force side-by-side stats on mobile */
+        .info-grid { 
+            grid-template-columns: 1fr 1fr; 
+            gap: 12px; 
+            margin-bottom: 24px;
+        }
+
+        .info-box { padding: 16px; }
+        .info-value { font-size: 1.2rem; } /* Slightly smaller to fit side-by-side */
+
+        .action-panel { padding: 20px; }
+
+        .mac-title { font-size: 1.35rem; }
+
+        .bottom-actions { 
+            flex-direction: column; 
+            gap: 12px; 
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .bottom-actions form { width: 100%; }
+        
+        /* Keep buttons side-by-side */
+        .button-group { 
+            flex-direction: row; 
+            gap: 10px;
+        }
+        
+        .btn { font-size: 0.9rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <a href="/admin" id="backToDashboardBtn" class="back-link">
+        <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Back to Dashboard
+    </a>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h2 class="mac-title">{{ mac }}</h2>
+                <div style="color: var(--text-muted); margin-top: 6px; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="monitor-smartphone" style="width: 16px; height: 16px;"></i>
+                    {{ user.device_name }} {% if user.ip %}<span style="opacity: 0.7;">({{ user.ip }})</span>{% endif %}
+                </div>
+            </div>
+            <div>
+                <span class="status-badge status-{{ user.status|default('expired') }}">
+                    {{ user.status }}
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="info-grid">
+                <div class="info-box">
+                    <div class="info-label">
+                        <i data-lucide="clock" style="width: 14px; height: 14px;"></i> Time Remaining
+                    </div>
+                    <div class="info-value" style="color: #059669;">
+                        {% if user.time > 0 %}
+                            {% set t = user.time %}
+                            {% set y = (t // 31536000) | int %}
+                            {% set mo = ((t % 31536000) // 2592000) | int %}
+                            {% set d = ((t % 2592000) // 86400) | int %}
+                            {% set h = ((t % 86400) // 3600) | int %}
+                            {% set m = ((t % 3600) // 60) | int %}
+                            {% set s = (t % 60) | int %}
+                            
+                            {% if y > 0 %}{{ y }}y {% endif %}
+                            {% if mo > 0 %}{{ mo }}mo {% endif %}
+                            {% if d > 0 %}{{ d }}d {% endif %}
+                            {% if y == 0 and mo == 0 and d == 0 %}
+                                {% if h > 0 %}{{ h }}h {% endif %}
+                                {% if m > 0 %}{{ m }}m {% endif %}
+                                {{ s }}s
+                            {% else %}
+                                {{ h }}h {{ m }}m
+                            {% endif %}
+                        {% else %}
+                            <span style="color: #94a3b8;">0s</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-label">
+                        <i data-lucide="award" style="width: 14px; height: 14px;"></i> Points Balance
+                    </div>
+                    <div class="info-value" style="color: #d97706;">
+                        {{ user.points | default(0) | round(1) }} <span style="font-size: 0.8rem; font-weight: 600; color: #b45309;">PTS</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-grid">
+                <div class="action-panel">
+                    <h4>
+                        <i data-lucide="timer" style="color: var(--primary);"></i> Manage Time
+                    </h4>
+                    <form action="/admin/manage_time" method="post">
+                        <input type="hidden" name="mac" value="{{ mac }}">
+                        <div class="input-row">
+                            <input type="number" name="amount" class="form-input" placeholder="Amount" required min="1">
+                            <select name="unit" class="form-input">
+                                <option value="minutes">Mins</option>
+                                <option value="hours">Hours</option>
+                            </select>
+                        </div>
+                        <div class="button-group">
+                            <button type="submit" name="action" value="add" class="btn btn-add">
+                                <i data-lucide="plus" style="width: 18px; height: 18px;"></i> Add
+                            </button>
+                            <button type="submit" name="action" value="subtract" class="btn btn-deduct">
+                                <i data-lucide="minus" style="width: 18px; height: 18px;"></i> Deduct
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="action-panel">
+                    <h4>
+                        <i data-lucide="coins" style="color: var(--warning);"></i> Manage Points
+                    </h4>
+                    <form action="/admin/manage_points" method="post">
+                        <input type="hidden" name="mac" value="{{ mac }}">
+                        <input type="number" step="0.1" name="amount" class="form-input" placeholder="Amount" required min="0.1" style="margin-bottom: 16px;">
+                        <div class="button-group">
+                            <button type="submit" name="action" value="add" class="btn btn-add">
+                                <i data-lucide="plus" style="width: 18px; height: 18px;"></i> Add
+                            </button>
+                            <button type="submit" name="action" value="subtract" class="btn btn-deduct">
+                                <i data-lucide="minus" style="width: 18px; height: 18px;"></i> Deduct
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="history-section">
+                <h4 style="margin-top: 0; color: var(--text-dark); display: flex; align-items: center; gap: 8px; font-size: 1.1rem;">
+                    <i data-lucide="history" style="color: var(--primary);"></i> Inserted Coins History
+                </h4>
+                
+                {% if history and history|length > 0 %}
+                <div class="timeline-scroll">
+                    <div class="timeline">
+                        {% for item in history %}
+                        <div class="timeline-item">
+                            <div class="timeline-date">
+                                <i data-lucide="calendar" style="width: 12px; height: 12px;"></i> {{ item.date_str }}
+                            </div>
+                            <div class="timeline-content">
+                                <span class="amount-badge">₱{{ item.amount }}</span> 
+                                <span style="color: var(--text-muted); font-size: 0.9rem;">Coin Inserted</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div style="background: var(--bg-light); border: 1px dashed #cbd5e1; padding: 30px; border-radius: 12px; text-align: center; color: var(--text-muted); margin-top: 16px; font-size: 0.95rem; display: flex; flex-direction: column; align-items: center;">
+                    <i data-lucide="inbox" style="width: 32px; height: 32px; opacity: 0.5; margin-bottom: 10px;"></i>
+                    No coins inserted by this user yet.
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="bottom-actions">
+                {% if user.status == 'blocked' %}
+                    <form action="/admin/unblock" method="post" style="flex: 1;">
+                        <input type="hidden" name="mac" value="{{ mac }}">
+                        <button type="submit" class="btn btn-unblock">
+                             <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i> Unblock User
+                        </button>
+                    </form>
+                {% else %}
+                    <form action="/admin/block" method="post" style="flex: 1;">
+                        <input type="hidden" name="mac" value="{{ mac }}">
+                        <button type="submit" class="btn btn-block" onclick="return confirm('Block this user from accessing the network?');">
+                            <i data-lucide="shield-alert" style="width: 18px; height: 18px;"></i> Block User
+                        </button>
+                    </form>
+                {% endif %}
+
+                <form action="/admin/delete_user" method="post" style="flex: 1;">
+                    <input type="hidden" name="mac" value="{{ mac }}">
+                    <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to completely delete this user?');">
+                        <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i> Delete User
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // Check if we have a saved dashboard URL (with pagination/search queries)
+    document.addEventListener("DOMContentLoaded", () => {
+        const returnUrl = sessionStorage.getItem('dashboardReturnUrl');
+        if (returnUrl && returnUrl.includes('/admin')) {
+            document.getElementById('backToDashboardBtn').href = returnUrl;
+        }
+    });
+</script>
+{% endblock %}

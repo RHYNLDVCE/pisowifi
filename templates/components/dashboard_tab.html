@@ -1,4 +1,124 @@
 <style>
+    /* --- STATS CARDS BASE (Revenues) --- */
+    .stats-grid {
+        display: grid;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .stat-title {
+        font-size: 0.85rem;
+        color: #6b7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #111827;
+    }
+/* --- MODERN SEARCH BAR --- */
+    .search-form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        max-width: 320px; /* Restrains it slightly on desktop */
+    }
+
+    .search-input-wrapper {
+        position: relative;
+        flex: 1;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-icon-left {
+        position: absolute;
+        left: 12px;
+        color: #9ca3af;
+        pointer-events: none; /* Allows clicking through the icon to focus the input */
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 10px 36px 10px 36px; /* Leaves room for left and right icons */
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background: #f9fafb;
+    }
+
+    .search-input:focus {
+        background: #ffffff;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .search-clear-btn {
+        position: absolute;
+        right: 8px;
+        color: #9ca3af;
+        background: none;
+        border: none;
+        padding: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: color 0.2s, background-color 0.2s;
+        text-decoration: none;
+    }
+
+    .search-clear-btn:hover {
+        color: #ef4444; /* Changes to red on hover */
+        background-color: #fee2e2;
+    }
+
+    .search-submit-btn {
+        background: #4f46e5;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+    }
+
+    .search-submit-btn:hover {
+        background: #4338ca;
+    }
+
+    @media (max-width: 768px) {
+        .search-form {
+            max-width: 100%; /* Take full width of container on mobile */
+        }
+    }
     /* --- TABLE SPACING FIXES (Prevents Grouping) --- */
     table { 
         width: 100%; 
@@ -24,9 +144,22 @@
 
     tr:last-child td { border-bottom: none; }
     
-    /* Row Highlighting */
+    /* Row Highlighting & Clickable Behavior */
     .row-active {
         background-color: rgba(209, 250, 229, 0.4); 
+    }
+    
+    .clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    
+    .clickable-row:hover {
+        background-color: #f3f4f6;
+    }
+    
+    .clickable-row.row-active:hover {
+        background-color: rgba(209, 250, 229, 0.8);
     }
 
     /* --- DESKTOP LAYOUT (Screens larger than 768px) --- */
@@ -38,8 +171,8 @@
         }
 
         .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             flex-shrink: 0; 
-            margin-bottom: 20px;
         }
 
         .fill-height-card {
@@ -80,6 +213,27 @@
             padding-bottom: 30px; 
         }
 
+        .stats-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            padding: 10px 6px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-title {
+            font-size: 0.65rem;
+            margin-bottom: 2px;
+        }
+
+        .stat-value {
+            font-size: 1rem;
+        }
+
         .fill-height-card {
             display: block;
             height: auto;
@@ -90,71 +244,108 @@
             padding: 15px;
         }
 
+        /* --- MOBILE SINGLE-LINE TABLE VIEW --- */
         .table-scroll-area {
-            overflow-x: auto; 
-            overflow-y: visible; 
+            overflow-x: hidden !important;
+        }
+        
+        .table-scroll-area table {
+            width: 100% !important;
+            table-layout: fixed !important;
+        }
+        
+        .table-scroll-area th, 
+        .table-scroll-area td {
+            padding: 10px 4px !important;
+            font-size: 0.7rem !important; 
+            white-space: nowrap !important; 
+            overflow: hidden !important; 
+            text-overflow: ellipsis !important;
+        }
+
+        /* Optimize Headers so they don't use '...' */
+        .table-scroll-area th {
+            font-size: 0.65rem !important;
+            text-overflow: clip !important;
+            overflow: visible !important;
+            letter-spacing: -0.2px !important;
+        }
+        
+        /* Optimize Number (#) column */
+        .table-scroll-area th:nth-child(1),
+        .table-scroll-area td:nth-child(1) {
+            display: table-cell !important;
+            width: 6% !important;
+            padding-left: 2px !important;
+            padding-right: 2px !important;
+            text-align: center !important;
+        }
+        
+/* Rebalanced Column Widths */
+        .table-scroll-area th:nth-child(2) { width: 36% !important; } /* MAC/IP */
+        .table-scroll-area th:nth-child(3) { width: 24% !important; } /* Device Name gets massive space increase */
+        .table-scroll-area th:nth-child(4) { width: 21% !important; text-align: left !important; padding-left: 2px !important; } /* Time/Points tight wrap */
+        .table-scroll-area th:nth-child(5) { width: 13% !important; text-align: center !important; } /* Status widened to fit the "STATUS" header */
+        
+        /* Align cells to match headers and prevent pill clipping */
+        .table-scroll-area td:nth-child(4) { text-align: left !important; padding-left: 2px !important; }
+        .table-scroll-area td:nth-child(5) { 
+            text-align: center !important; 
+            padding-right: 0 !important; 
+            overflow: visible !important; /* Prevents pill clipping */
+            text-overflow: clip !important;
+        }
+
+        .table-scroll-area td div {
+            font-size: 0.65rem !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+
+        /* Force MAC address to NEVER truncate and tighten spacing to fit */
+        .table-scroll-area td:nth-child(2) div:first-child {
+            text-overflow: clip !important;
+            overflow: visible !important;
+            font-size: 0.62rem !important; 
+            letter-spacing: -0.4px !important;
+        }
+        
+        .table-scroll-area td span {
+            font-size: 0.55rem !important;
+            padding: 3px 4px !important;
+        }
+
+        /* Status Badge Mobile Override (Single Letter Mode) */
+        .st-full { display: none !important; }
+        .st-short { display: inline !important; font-size: 0.75rem; font-weight: 800; }
+        .status-pill { padding: 4px 6px !important; border-radius: 6px !important; display: inline-block !important; }
+
+        /* Stack Time and Points vertically and align LEFT */
+        .time-points-container {
+            flex-direction: column !important;
+            align-items: flex-start !important; 
+            gap: 4px !important;
         }
     }
 
-    /* --- DROPDOWN & MODAL STYLES --- */
-    .dropdown { position: relative; display: inline-block; }
-    .dropdown-btn { background: transparent; border: none; cursor: pointer; padding: 8px; border-radius: 50%; color: #6b7280; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
-    .dropdown-btn:hover { background-color: #f3f4f6; color: #111827; }
-    
-    .dropdown-content { 
-        display: none; 
-        position: absolute; 
-        right: 0; 
-        top: 100%; 
-        background-color: white; 
-        min-width: 180px; 
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); 
-        border: 1px solid #e5e7eb; 
-        border-radius: 8px; 
-        z-index: 50; 
-        overflow: hidden; 
+    @media (max-width: 380px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr); 
+        }
     }
-    .dropdown-content.show { display: block; }
-    
-    .dropdown-content button, .dropdown-content form button { 
-        width: 100%; 
-        text-align: left; 
-        padding: 12px 16px; 
-        border: none; 
-        background: none; 
-        cursor: pointer; 
-        color: #374151; 
-        font-size: 0.9rem; 
-        display: block;
-    }
-    .dropdown-content button:hover { background-color: #f9fafb; }
-    
-    .text-danger { color: #ef4444 !important; }
-    .text-success { color: #059669 !important; }
 
-    /* Modal Styles */
-    .modal-overlay { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); animation: fadeIn 0.2s; }
-    .modal-content { background-color: #fefefe; margin: 15% auto; padding: 30px; border: 1px solid #e5e7eb; width: 90%; max-width: 380px; border-radius: 16px; text-align: center; animation: slideIn 0.2s; }
-    .modal-header { font-size: 1.25rem; font-weight: 700; margin-bottom: 5px; color: #111827; }
-    .modal-sub { font-size: 0.875rem; color: #6b7280; margin-bottom: 25px; }
-    .input-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 25px; }
-    .time-input { padding: 12px; font-size: 1.1rem; width: 80px; text-align: center; border: 2px solid #e5e7eb; border-radius: 8px; font-weight: bold; }
-    .unit-select { padding: 12px; font-size: 1rem; border: 2px solid #e5e7eb; border-radius: 8px; background: white; cursor: pointer; }
-    .confirm-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 600; color: white; cursor: pointer; }
-    
-    .btn-add { background-color: #059669; }
-    .btn-deduct { background-color: #dc2626; }
-    
-    @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
-    @keyframes slideIn { from {transform: translateY(-20px);} to {transform: translateY(0);} }
+    .st-short { display: none; }
+    .st-full { display: inline; }
+
 </style>
 
 <div id="home" class="section active">
-    <h2 style="margin-top: 0; margin-bottom: 20px;">Dashboard Overview</h2>
+    <h2 style="margin-top: 0; margin-bottom: 16px; font-size: 1.5rem;">Dashboard Overview</h2>
     
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-title">Total Revenue</div>
+            <div class="stat-title">Total</div>
             <div class="stat-value" style="color:#10b981;">₱{{ stats.total }}</div>
         </div>
         <div class="stat-card">
@@ -181,27 +372,30 @@
 
     <div class="fill-height-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-shrink: 0; flex-wrap:wrap; gap:10px;">
-            <h3 style="margin:0;">
+            <h3 style="margin:0; font-size: 1.1rem;">
                 Connections 
-                <span style="font-size: 0.8em; color: #6b7280; margin-left: 10px; font-weight:400;">
-                    (Active: <b>{{ active_users }}</b> / Total: {{ total_users }})
+                <span style="font-size: 0.8em; color: #6b7280; margin-left: 5px; font-weight:400;">
+                    (Active: <b style="color: #10b981;">{{ active_users }}</b> / {{ total_users }})
                 </span>
             </h3>
-
-            <form action="/admin" method="get" style="display:flex; align-items:center; gap:8px;">
-                <div style="position: relative;">
-                    <input type="text" name="search" value="{{ search_query }}" placeholder="Search MAC..." 
-                           style="padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; width: 200px;">
+            <form action="/admin" method="get" class="search-form">
+                <div class="search-input-wrapper">
+                    
+                    <input type="text" name="search" value="{{ search_query }}" class="search-input" placeholder="Search MAC...">
                     <input type="hidden" name="page" value="1">
+                    
+                    {% if search_query %}
+                        <a href="/admin" class="search-clear-btn" title="Clear Search">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </a>
+                    {% endif %}
                 </div>
-                <button type="submit" class="btn btn-primary btn-sm" style="width: auto; padding: 8px 12px; display: flex; align-items: center; justify-content: center;">
-                    🔍
+                
+                <button type="submit" class="search-submit-btn">
+                    Search
                 </button>
-                {% if search_query %}
-                    <a href="/admin" class="btn btn-sm" style="background:#fee2e2; color:#ef4444; border:1px solid #fecaca; text-decoration:none; display:flex; align-items:center; justify-content: center; padding: 8px 12px;" title="Clear Search">
-                        ✕
-                    </a>
-                {% endif %}
             </form>
         </div>
         
@@ -211,90 +405,85 @@
                     <tr>
                         <th style="width: 50px;">#</th> 
                         <th>MAC Address</th>
-                        <th>Time Remaining</th>
+                        <th>Device</th> 
+                        <th>Time</th>
                         <th>Status</th>
-                        <th style="width: 60px; text-align: center;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for mac, user in users.items() %}
-                    <tr class="{% if user.status == 'connected' %}row-active{% endif %}">
+                    <tr class="clickable-row {% if user.status == 'connected' %}row-active{% endif %}" onclick="sessionStorage.setItem('dashboardReturnUrl', window.location.href); saveScrollPosition(); window.location.href='/admin/user/{{ mac }}'">
                         <td><div style="font-weight:600; color:#111827;">{{ (current_page - 1) * 10 + loop.index }}</div></td>
 
                         <td style="font-family:monospace; text-transform: uppercase; font-weight: 500;">
-                            {% if search_query %}
-                                <span style="background-color: #fef08a;">{{ mac }}</span>
-                            {% else %}
-                                {{ mac }}
-                            {% endif %}
+                            <div style="color: #000000; font-weight: 700;">
+                                {% if search_query %}
+                                    <span style="background-color: #fef08a;">{{ mac }}</span>
+                                {% else %}
+                                    {{ mac }}
+                                {% endif %}
+                            </div>
                             {% if user.ip %}
                                 <div style="font-size: 0.75rem; color: #6b7280; margin-top: 2px;">{{ user.ip }}</div>
                             {% endif %}
                         </td>
                         
                         <td>
-                            {% if user.time > 0 %}
-                                {% set t = user.time %}
-                                {% set y = (t // 31536000) | int %}
-                                {% set mo = ((t % 31536000) // 2592000) | int %}
-                                {% set d = ((t % 2592000) // 86400) | int %}
-                                {% set h = ((t % 86400) // 3600) | int %}
-                                {% set m = ((t % 3600) // 60) | int %}
-                                {% set s = (t % 60) | int %}
-                                
-                                <span style="font-weight:bold; color:#059669;">
-                                    {% if y > 0 %}{{ y }}y {% endif %}
-                                    {% if mo > 0 %}{{ mo }}mo {% endif %}
-                                    {% if d > 0 %}{{ d }}d {% endif %}
-                                    {% if y == 0 and mo == 0 and d == 0 %}
-                                        {# Standard H:M:S for short times #}
-                                        {% if h > 0 %}{{ h }}h {% endif %}
-                                        {% if m > 0 %}{{ m }}m {% endif %}
-                                        {{ s }}s
-                                    {% else %}
-                                        {# For long times, show H:M but maybe skip S to save space #}
-                                        {{ h }}h {{ m }}m
-                                    {% endif %}
-                                </span>
-                            {% else %}
-                                <span style="color:#9ca3af;">0s</span>
-                            {% endif %}
+                            <div style="font-size: 0.85rem; font-weight: 600; color: #374151;">
+                                {{ user.device_name | default('Unknown Device', true) }}
+                            </div>
                         </td>
+                        
+                        <td>
+                            <div class="time-points-container" style="display: flex; align-items: center; gap: 10px;">
+                                <div>
+                                    {% if user.time > 0 %}
+                                        {% set t = user.time %}
+                                        {% set y = (t // 31536000) | int %}
+                                        {% set mo = ((t % 31536000) // 2592000) | int %}
+                                        {% set d = ((t % 2592000) // 86400) | int %}
+                                        {% set h = ((t % 86400) // 3600) | int %}
+                                        {% set m = ((t % 3600) // 60) | int %}
+                                        {% set s = (t % 60) | int %}
+                                        
+                                        <span style="font-weight:bold; color:#059669;">
+                                            {% if y > 0 %}{{ y }}y {% endif %}
+                                            {% if mo > 0 %}{{ mo }}mo {% endif %}
+                                            {% if d > 0 %}{{ d }}d {% endif %}
+                                            {% if y == 0 and mo == 0 and d == 0 %}
+                                                {% if h > 0 %}{{ h }}h {% endif %}
+                                                {% if m > 0 %}{{ m }}m {% endif %}
+                                                {{ s }}s
+                                            {% else %}
+                                                {{ h }}h {{ m }}m
+                                            {% endif %}
+                                        </span>
+                                    {% else %}
+                                        <span style="color:#9ca3af;">0s</span>
+                                    {% endif %}
+                                </div>
 
+                                <span style="background: #fef3c7; color: #d97706; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; border: 1px solid #fde68a;">
+                                    ★ {{ user.points | default(0) }}
+                                </span>
+                            </div>
+                        </td>
                         <td>
                             {% if user.status == 'connected' %}
-                                <span style="background:#d1fae5; color:#065f46; padding:4px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;">ACTIVE</span>
+                                <span class="status-pill" style="background:#d1fae5; color:#065f46; padding:4px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;"><span class="st-full">ACTIVE</span><span class="st-short">A</span></span>
                             {% elif user.status == 'paused' %}
-                                <span style="background:#fef3c7; color:#92400e; padding:4px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;">PAUSED</span>
+                                <span class="status-pill" style="background:#fef3c7; color:#92400e; padding:4px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;"><span class="st-full">PAUSED</span><span class="st-short">P</span></span>
                             {% elif user.status == 'blocked' %}
-                                <span style="background:#fee2e2; color:#991b1b; padding:4px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;">BLOCKED</span>
+                                <span class="status-pill" style="background:#fee2e2; color:#991b1b; padding:4px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;"><span class="st-full">BLOCKED</span><span class="st-short">B</span></span>
                             {% elif user.status == 'expired' %}
-                                <span style="background:#f3f4f6; color:#6b7280; padding:4px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;">EXPIRED</span>
+                                <span class="status-pill" style="background:#f3f4f6; color:#6b7280; padding:4px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;"><span class="st-full">EXPIRED</span><span class="st-short">E</span></span>
                             {% else %}
-                                <span style="background:#e5e7eb; color:#374151; padding:4px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;">{{ user.status|upper }}</span>
+                                <span class="status-pill" style="background:#e5e7eb; color:#374151; padding:4px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;"><span class="st-full">{{ user.status|upper }}</span><span class="st-short">{{ user.status[0]|upper }}</span></span>
                             {% endif %}
-                        </td>
-
-                        <td style="text-align: center;">
-                            <div class="dropdown">
-                                <button onclick="toggleDropdown('{{ mac }}')" class="dropdown-btn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
-                                </button>
-                                <div id="dropdown-{{ mac }}" class="dropdown-content">
-                                    <button onclick="openTimeModal('{{ mac }}', 'add')">➕ Add Time</button>
-                                    <button onclick="openTimeModal('{{ mac }}', 'subtract')">➖ Deduct Time</button>
-                                    {% if user.status == 'blocked' %}
-                                        <form action="/admin/unblock" method="post" style="margin:0;"><input type="hidden" name="mac" value="{{ mac }}"><button type="submit" class="text-success">🔓 Unblock User</button></form>
-                                    {% else %}
-                                        <form action="/admin/block" method="post" style="margin:0;"><input type="hidden" name="mac" value="{{ mac }}"><button type="submit" class="text-danger">🚫 Block User</button></form>
-                                    {% endif %}
-                                    <button onclick="openDeleteModal('{{ mac }}')" class="text-danger" style="border-top: 1px solid #f3f4f6;">🗑️ Delete User</button>
-                                </div>
-                            </div>
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="5" style="text-align:center; padding:30px; color:#9ca3af;">No users found matching your search.</td></tr>
+                    <tr><td colspan="5" style="text-align:center; padding:30px; color:#9ca3af;">No users found matching your search.</td></tr> 
                     {% endfor %}
                 </tbody>
             </table>
@@ -321,90 +510,7 @@
     </div>
 </div>
 
-<div id="timeModal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header" id="modalTitle">Manage Time</div>
-        <div class="modal-sub">Target: <span id="modalMacDisplay" style="font-family:monospace; font-weight:bold;"></span></div>
-        <form action="/admin/manage_time" method="post" onsubmit="saveScrollPosition()">
-            <input type="hidden" name="mac" id="modalMacInput">
-            <input type="hidden" name="action" id="modalActionInput"> 
-            <div class="input-row">
-                <input type="number" name="amount" class="time-input" value="1" min="1" required placeholder="1">
-                <select name="unit" class="unit-select"><option value="minutes">Mins</option><option value="hours">Hours</option></select>
-            </div>
-            <button type="submit" id="modalSubmitBtn" class="confirm-btn btn-add">Confirm Action</button>
-            <div style="margin-top:20px;"><button type="button" class="btn" style="background:transparent; color:#9ca3af; width:auto; font-size:0.9rem;" onclick="closeTimeModal()">Cancel</button></div>
-        </form>
-    </div>
-</div>
-
-<div id="deleteModal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header" style="color:#ef4444;">Delete User?</div>
-        <div class="modal-sub">Are you sure you want to remove <br><span id="deleteModalMac" style="font-family:monospace; font-weight:bold; color:#111827;"></span>?</div>
-        <p style="font-size:0.85rem; color:#6b7280; margin-bottom:20px;">This action cannot be undone. The user will be disconnected and removed from the database.</p>
-        <form action="/admin/delete_user" method="post" onsubmit="saveScrollPosition()">
-            <input type="hidden" name="mac" id="deleteModalInput">
-            <button type="submit" class="confirm-btn btn-deduct">Yes, Delete User</button>
-            <div style="margin-top:15px;"><button type="button" class="btn" style="background:transparent; color:#9ca3af; width:auto; font-size:0.9rem;" onclick="closeDeleteModal()">Cancel</button></div>
-        </form>
-    </div>
-</div>
-
 <script>
-    // --- DROPDOWN LOGIC ---
-    function toggleDropdown(mac) {
-        var dropdowns = document.getElementsByClassName("dropdown-content");
-        for (var i = 0; i < dropdowns.length; i++) { if (dropdowns[i].id !== 'dropdown-' + mac) dropdowns[i].classList.remove('show'); }
-        document.getElementById("dropdown-" + mac).classList.toggle("show");
-    }
-
-    window.onclick = function(event) {
-        if (!event.target.closest('.dropdown-btn')) {
-            var dropdowns = document.getElementsByClassName("dropdown-content");
-            for (var i = 0; i < dropdowns.length; i++) { if (dropdowns[i].classList.contains('show')) dropdowns[i].classList.remove('show'); }
-        }
-        if (event.target == document.getElementById('timeModal')) closeTimeModal();
-        if (event.target == document.getElementById('deleteModal')) closeDeleteModal();
-    }
-
-    // --- MODAL LOGIC (ADD/DEDUCT) ---
-    function openTimeModal(mac, action) {
-        document.getElementById('modalMacDisplay').innerText = mac;
-        document.getElementById('modalMacInput').value = mac;
-        document.getElementById('modalActionInput').value = action; 
-        
-        var title = document.getElementById('modalTitle');
-        var btn = document.getElementById('modalSubmitBtn');
-        
-        if (action === 'add') { 
-            title.innerText = "Add Time"; 
-            btn.innerText = "Confirm Add"; 
-            btn.className = "confirm-btn btn-add"; 
-        } else { 
-            title.innerText = "Deduct Time"; 
-            btn.innerText = "Confirm Deduct"; 
-            btn.className = "confirm-btn btn-deduct"; 
-        }
-        document.getElementById('timeModal').style.display = 'block';
-        
-        // Hide dropdown
-        var dropdowns = document.getElementsByClassName("dropdown-content");
-        for (var i = 0; i < dropdowns.length; i++) { dropdowns[i].classList.remove('show'); }
-    }
-    
-    function closeTimeModal() { document.getElementById('timeModal').style.display = 'none'; }
-
-    function openDeleteModal(mac) {
-        document.getElementById('deleteModalMac').innerText = mac;
-        document.getElementById('deleteModalInput').value = mac;
-        document.getElementById('deleteModal').style.display = 'block';
-        var dropdowns = document.getElementsByClassName("dropdown-content");
-        for (var i = 0; i < dropdowns.length; i++) { dropdowns[i].classList.remove('show'); }
-    }
-    function closeDeleteModal() { document.getElementById('deleteModal').style.display = 'none'; }
-
-    // --- SCROLL PRESERVATION LOGIC ---
     function saveScrollPosition() {
         sessionStorage.setItem('scrollPos_Window', window.scrollY);
         const tableArea = document.querySelector('.table-scroll-area');
@@ -430,13 +536,11 @@
     document.addEventListener("DOMContentLoaded", function() {
         restoreScrollPosition();
         
-        // 1. Attach to ALL Forms (Search, Add Time, Deduct, Delete)
         const forms = document.querySelectorAll('form');
         forms.forEach(form => {
             form.addEventListener('submit', saveScrollPosition);
         });
 
-        // 2. Attach to Navigation Links (Pagination, Clear Search)
         const navLinks = document.querySelectorAll('a[href^="/admin"]');
         navLinks.forEach(link => {
             link.addEventListener('click', saveScrollPosition);

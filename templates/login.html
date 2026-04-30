@@ -1,24 +1,264 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Login{% endblock %}
+{% block title %}Admin Login - PisoWifi{% endblock %}
 
 {% block styles %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+
 <style>
-    body { background: #eee; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    .login-box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 300px; text-align: center; }
-    input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
-    button { width: 100%; padding: 10px; background: #333; color: white; border: none; cursor: pointer; border-radius: 4px; }
-    button:hover { background: #000; }
+    :root {
+        --bg-body: #f8fafc;
+        --bg-card: #ffffff;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --border-color: #cbd5e1;
+        --border-focus: #3b82f6;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --error-bg: #fef2f2;
+        --error-text: #ef4444;
+        --error-border: #fca5a5;
+    }
+
+    * { 
+        box-sizing: border-box; 
+    }
+
+    body { 
+        background-color: var(--bg-body); 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        min-height: 100vh; 
+        margin: 0;
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        color: var(--text-main);
+        -webkit-font-smoothing: antialiased;
+    }
+
+    .login-container {
+        width: 100%;
+        max-width: 400px;
+        padding: 2rem;
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    }
+
+    .header {
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .title {
+        margin: 0 0 0.5rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .subtitle {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+    }
+
+    .flash-message {
+        background-color: var(--error-bg);
+        color: var(--error-text);
+        border: 1px solid var(--error-border);
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-main);
+        margin-bottom: 0.5rem;
+    }
+
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    input { 
+        width: 100%; 
+        padding: 0.75rem 1rem; 
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+        font-family: inherit;
+        color: var(--text-main);
+        background-color: var(--bg-body);
+        transition: all 0.2s ease;
+    }
+    
+    input:focus {
+        outline: none;
+        border-color: var(--border-focus);
+        background-color: var(--bg-card);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .password-toggle {
+        position: absolute;
+        right: 0.75rem;
+        background: none;
+        border: none;
+        padding: 0.25rem;
+        color: var(--text-muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s ease;
+    }
+
+    .password-toggle:hover {
+        color: var(--text-main);
+    }
+
+    .password-toggle:focus {
+        outline: none;
+        color: var(--primary);
+    }
+
+    .btn-submit { 
+        width: 100%; 
+        padding: 0.875rem;
+        background-color: var(--primary); 
+        color: #ffffff; 
+        border: none; 
+        border-radius: 8px;
+        cursor: pointer; 
+        font-weight: 600;
+        font-size: 1rem;
+        font-family: inherit;
+        transition: background-color 0.2s ease;
+        margin-top: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-submit:hover { 
+        background-color: var(--primary-hover); 
+    }
+
+    .btn-submit:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    .lucide-spin {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { 
+        100% { transform: rotate(360deg); } 
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="login-box">
-    <h2>Admin Portal</h2>
-    <form action="/auth" method="post">
-        <input type="text" name="username" placeholder="Username" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <button type="submit">Login</button>
+<div class="login-container">
+    <div class="header">
+        <h1 class="title">Administrator Portal</h1>
+        <p class="subtitle">Sign In to manage your Pisowifi</p>
+    </div>
+    
+    {% if request.query_params.get('error') %}
+        <div class="flash-message">
+            <i data-lucide="alert-circle" style="width: 18px; height: 18px;"></i>
+            {{ request.query_params.get('error') }}
+        </div>
+    {% endif %}
+
+    <form action="/auth" method="post" id="loginForm">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <div class="input-wrapper">
+                <input type="text" id="username" name="username" required autofocus autocomplete="username">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrapper">
+                <input type="password" id="password" name="password" required autocomplete="current-password">
+                <button type="button" class="password-toggle" id="togglePassword" aria-label="Toggle password visibility">
+                    <i data-lucide="eye" style="width: 20px; height: 20px;"></i>
+                </button>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn-submit" id="submitBtn">
+            Sign In
+        </button>
     </form>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize icons on load
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // Password visibility toggle logic
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+
+    if (togglePasswordBtn && passwordInput) {
+        togglePasswordBtn.addEventListener('click', function() {
+            const currentType = passwordInput.getAttribute('type');
+            const isPassword = currentType === 'password';
+            
+            // Toggle input type
+            passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+            
+            // Update icon
+            const newIcon = isPassword ? 'eye-off' : 'eye';
+            this.innerHTML = `<i data-lucide="${newIcon}" style="width: 20px; height: 20px;"></i>`;
+            
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            console.info(`[Auth UI] Password visibility toggled to: ${isPassword ? 'visible' : 'hidden'}`);
+        });
+    }
+
+    // Form submission state handling
+    document.getElementById('loginForm').addEventListener('submit', function() {
+        console.info('[Auth] Initiating authentication sequence...');
+        
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 20px; height: 20px;"></i> Authenticating...`;
+        btn.disabled = true;
+        
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+</script>
 {% endblock %}

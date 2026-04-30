@@ -239,7 +239,9 @@
         margin-bottom: 2px;
         flex-wrap: wrap;
     }
-
+    .ip-mac-text {
+        font-size: .70rem; /* Adjust this value */
+    }
     /* COMPACT ACTIONS */
     .actions {
         padding: 15px 20px 30px;
@@ -507,7 +509,7 @@
                 </span>
                 {% endif %}
             </div>
-            <div class="info-row">
+            <div class="info-row ip-mac-text">
                 <span>IP: <b id="ipDisplay">...</b></span>
                 <span>MAC: <b id="macDisplay">...</b></span>
             </div>
