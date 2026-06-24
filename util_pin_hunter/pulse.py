@@ -21,7 +21,6 @@ except ImportError:
 try:
     import config
     COIN_PIN = int(config.COIN_PIN_WPI)
-    # Extract the first item from the list and convert to integer
     RELAY_PIN = int(config.RELAY_PINS[0])
 except Exception as e:
     logger.warning(f"Failed to load config.py. Using default pins 3 and 5. Error: {e}")
@@ -39,14 +38,14 @@ def setup_hardware():
     # 2. Setup and Enable Relay Pin (Give power to the coin slot)
     logger.info(f"Powering ON Relay on Physical Pin {RELAY_PIN}...")
     wiringpi.pinMode(RELAY_PIN, 1)       # Set as OUTPUT
-    wiringpi.digitalWrite(RELAY_PIN, 1)  # Set HIGH (1) to turn ON
+    wiringpi.digitalWrite(RELAY_PIN, 1)  # Set HIGH (1) to turn ON (Active HIGH)
 
 def cleanup_hardware():
     """Ensure no lingering state is left on the hardware and cut power."""
     try:
         # Turn off Relay (Cut power to coin slot)
-        wiringpi.digitalWrite(RELAY_PIN, 0) 
-        wiringpi.pinMode(RELAY_PIN, 0)      
+        wiringpi.digitalWrite(RELAY_PIN, 0) # Set LOW (0) to turn OFF (Active HIGH)
+        wiringpi.pinMode(RELAY_PIN, 0)      # Set to INPUT for safety
         
         # Disable pull-up resistor on the data pin
         wiringpi.pullUpDnControl(COIN_PIN, 0)
@@ -67,7 +66,6 @@ def run_diagnostics():
 
     try:
         while True:
-            # Read from the COIN pin, not the RELAY pin
             state = wiringpi.digitalRead(COIN_PIN)
             
             # Detect Falling Edge (HIGH to LOW) -> Pulse starts
