@@ -19,7 +19,8 @@ def pause_internet(mac: str, session: SessionService = Depends(get_session_servi
     return session.pause_user(mac)
 
 # --- SLOT MANAGEMENT ---
-@router.get("/enable_slot")
+# Prevent captive portals from caching the request by forcing POST
+@router.post("/enable_slot")
 async def enable_slot(mac: str):
     user = state.users.get(mac, {})
     if user.get("status") == "blocked": return {"result": "blocked"}

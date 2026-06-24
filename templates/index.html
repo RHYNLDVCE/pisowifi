@@ -815,6 +815,7 @@
                 audioInsert.play().catch(e => console.log("Auto-play blocked:", e));
             } else if (data.type === "coin_counting") {
                 const btn = document.getElementById("btnModalAction");
+                window.isCountingCoins = (data.is_counting === true);
                 
                 if (data.is_counting === true) {
                     // Coin is dropping, lock the button
@@ -856,7 +857,8 @@
 
     async function fetchStatus() {
         try {
-            let res = await fetch(`/status?mac=${mac}`);
+            // Append current time to create a unique URL, bypassing cache
+            let res = await fetch(`/status?mac=${mac}&_t=${Date.now()}`);
             let data = await res.json();
             localTime = data.time_remaining;
 
@@ -956,6 +958,8 @@
         }
 
         const btn = document.getElementById("btnModalAction");
+        if (window.isCountingCoins) return;
+
         if (sessionAddedTime > 0) {
             btn.innerText = "DONE & RESUME";
             btn.className = "btn btn-resume pulse-animation";
@@ -1086,7 +1090,9 @@
         const btn = document.getElementById("btnInsert");
         btn.disabled = true;
         btn.innerText = "Please Wait...";
-        fetch(`/enable_slot?mac=${mac}`).then(r => r.json()).then(d => {
+        
+        // Explicitly define the POST method to bypass Android/iOS captive portal cache
+        fetch(`/enable_slot?mac=${mac}`, { method: 'POST' }).then(r => r.json()).then(d => {
             if (d.result === "success") {
                 fetchStatus();
                 if (fastPollTimer) clearInterval(fastPollTimer);
