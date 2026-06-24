@@ -1101,8 +1101,13 @@
                 showToast("Access Denied: You are BLOCKED. Contact Owner.", "error");
                 btn.disabled = false;
                 btn.innerText = "Insert Coin";
-            } else {
+            } else if (d.result === "busy") {
                 showToast("System Busy - Someone is inserting coins", "error");
+                btn.disabled = false;
+                btn.innerText = "Insert Coin";
+            } else {
+                // Catch routing or server errors instead of defaulting to a busy state
+                showToast("Server Error: Check API connection.", "error");
                 btn.disabled = false;
                 btn.innerText = "Insert Coin";
             }
