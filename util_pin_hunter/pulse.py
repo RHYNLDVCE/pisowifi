@@ -2,6 +2,10 @@
 import time
 import sys
 import logging
+import os
+
+# Ensure the script can import config.py whether run from root or app folder
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Configure professional logging
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s - %(message)s')
@@ -10,35 +14,50 @@ logger = logging.getLogger(__name__)
 try:
     import wiringpi
 except ImportError:
-    logger.error("wiringpi module is not installed or accessible.")
+    logger.error("wiringpi module is not installed or accessible. Run with sudo.")
     sys.exit(1)
 
-# Attempt to load the physical pin from the centralized configuration
+# Safely extract pins from config
 try:
     import config
-    PIN = int(config.COIN_PIN_WPI)
-except Exception:
-    PIN = 11  # Fallback physical pin
+    COIN_PIN = int(config.COIN_PIN_WPI)
+    # Extract the first item from the list and convert to integer
+    RELAY_PIN = int(config.RELAY_PINS[0])
+except Exception as e:
+    logger.warning(f"Failed to load config.py. Using default pins 3 and 5. Error: {e}")
+    COIN_PIN = 3
+    RELAY_PIN = 5
 
 def setup_hardware():
-    """Initialize GPIO pin for reading."""
+    """Initialize GPIO pins and POWER ON the coin slot relay."""
     wiringpi.wiringPiSetupPhys()
-    wiringpi.pinMode(PIN, 0)         # Set as INPUT
-    wiringpi.pullUpDnControl(PIN, 2) # Enable internal PULL_UP resistor
+    
+    # 1. Setup Coin Data Pin (Listen for pulses)
+    wiringpi.pinMode(COIN_PIN, 0)         # Set as INPUT
+    wiringpi.pullUpDnControl(COIN_PIN, 2) # Enable internal PULL_UP resistor
+
+    # 2. Setup and Enable Relay Pin (Give power to the coin slot)
+    logger.info(f"Powering ON Relay on Physical Pin {RELAY_PIN}...")
+    wiringpi.pinMode(RELAY_PIN, 1)       # Set as OUTPUT
+    wiringpi.digitalWrite(RELAY_PIN, 1)  # Set HIGH (1) to turn ON
 
 def cleanup_hardware():
-    """Ensure no lingering state is left on the hardware."""
+    """Ensure no lingering state is left on the hardware and cut power."""
     try:
-        # Disable pull-up resistor and ensure input mode to prevent leakage/shorts
-        wiringpi.pullUpDnControl(PIN, 0)
-        wiringpi.pinMode(PIN, 0)
+        # Turn off Relay (Cut power to coin slot)
+        wiringpi.digitalWrite(RELAY_PIN, 0) 
+        wiringpi.pinMode(RELAY_PIN, 0)      
+        
+        # Disable pull-up resistor on the data pin
+        wiringpi.pullUpDnControl(COIN_PIN, 0)
+        wiringpi.pinMode(COIN_PIN, 0)
     except Exception as e:
         logger.error(f"Failed to clean up GPIO state: {e}")
 
 def run_diagnostics():
     """Run the continuous pulse monitoring loop."""
     setup_hardware()
-    logger.info(f"Coin Slot Pulse Visualizer initialized on Physical Pin {PIN}.")
+    logger.info(f"Coin Slot Data Pin initialized on Physical Pin {COIN_PIN}.")
     logger.info("Awaiting pulse signals. Press Ctrl+C to terminate.")
     print("-" * 75)
 
@@ -48,7 +67,8 @@ def run_diagnostics():
 
     try:
         while True:
-            state = wiringpi.digitalRead(PIN)
+            # Read from the COIN pin, not the RELAY pin
+            state = wiringpi.digitalRead(COIN_PIN)
             
             # Detect Falling Edge (HIGH to LOW) -> Pulse starts
             if state == 0 and last_state == 1:
@@ -71,7 +91,7 @@ def run_diagnostics():
     finally:
         logger.info("Initiating hardware state cleanup...")
         cleanup_hardware()
-        logger.info("Cleanup complete. Exiting gracefully.")
+        logger.info("Cleanup complete. Hardware is completely OFF and safe.")
 
 if __name__ == "__main__":
     run_diagnostics()

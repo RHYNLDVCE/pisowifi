@@ -2,8 +2,8 @@ import wiringpi
 import time
 import config
 
-# Import the centralized logger and alias it as 'print' so we don't have to 
-# change the rest of the code below.
+# Import the centralized logger and alias it as 'print' to avoid changing 
+# the rest of the code below.
 from core.logger import system_log as print
 
 # ---------------------------
