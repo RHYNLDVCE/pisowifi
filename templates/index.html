@@ -275,7 +275,7 @@
 
     .btn-main {
         background: var(--text-main);
-        color: white;
+        color: var(--card-bg);
     }
 
     .btn-insert {
@@ -297,9 +297,9 @@
     }
 
     .btn-outline {
-        background: white;
-        border: 2px solid #e2e8f0;
-        color: var(--text-sub);
+        background: var(--card-bg);
+        border: 2px solid var(--text-sub);
+        color: var(--text-main);
         box-shadow: none;
         font-size: 0.95rem;
     }
@@ -326,7 +326,8 @@
     }
 
     .modal-card {
-        background: white;
+        background: var(--card-bg);
+        color: var(--text-main);
         width: 90%;
         max-width: 340px;
         border-radius: 12px;
@@ -471,6 +472,73 @@
             transform: translateY(0) scale(1);
             opacity: 1;
         }
+    }
+
+    /* --- DARK THEME OVERRIDES --- */
+    [data-theme="dark"] {
+        --bg-color: #0f172a;
+        --card-bg: #1e293b;
+        --text-main: #f8fafc;
+        --text-sub: #94a3b8;
+        --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    }
+    
+    [data-theme="dark"] .stats-box {
+        background: #0f172a;
+        border-color: #334155;
+    }
+
+    [data-theme="dark"] .stat-row.border-bottom {
+        border-bottom-color: #334155;
+    }
+
+    [data-theme="dark"] .progress-track {
+        background: #334155;
+    }
+
+    /* --- THEME TOGGLE BUTTON --- */
+    .theme-toggle-btn {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: none;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+        z-index: 5000;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Light Theme Button State */
+    [data-theme="light"] .theme-toggle-btn {
+        background-color: #6b1236;
+        color: white;
+    }
+    [data-theme="light"] .theme-toggle-btn:hover {
+        background-color: #4a0c25;
+    }
+    [data-theme="light"] .icon-sun { display: none; }
+    [data-theme="light"] .icon-moon { display: block; }
+
+    /* Dark Theme Button State */
+    [data-theme="dark"] .theme-toggle-btn {
+        background-color: #eeb211;
+        color: #6b1236;
+    }
+    [data-theme="dark"] .theme-toggle-btn:hover {
+        background-color: #d49d0e;
+    }
+    [data-theme="dark"] .icon-moon { display: none; }
+    [data-theme="dark"] .icon-sun { display: block; }
+
+    .theme-toggle-icon {
+        width: 24px;
+        height: 24px;
     }
 </style>
 {% endblock %}
@@ -633,10 +701,39 @@
 </div>
 
 <div id="toastContainer" class="toast-container"></div>
+
+<button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle Dark Mode">
+    <svg class="theme-toggle-icon icon-moon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+    </svg>
+    <svg class="theme-toggle-icon icon-sun" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+    </svg>
+</button>
 {% endblock %}
 
 {% block scripts %}
 <script>
+    // Initialize theme engine
+    const rootElement = document.documentElement;
+    
+    // Check cache for user preference, default to light
+    const savedTheme = localStorage.getItem('piso_theme') || 'light';
+    rootElement.setAttribute('data-theme', savedTheme);
+
+    // Apply event listener on load
+    document.addEventListener('DOMContentLoaded', () => {
+        const themeBtn = document.getElementById('themeToggle');
+        if (themeBtn) {
+            themeBtn.addEventListener('click', () => {
+                const currentTheme = rootElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                rootElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('piso_theme', newTheme);
+            });
+        }
+    });
+
     var mac = "{{ mac }}";
     var ratesStr = "{{ coin_rates }}";
     var pointMap = JSON.parse('{{ coin_point_map | tojson | safe }}');
@@ -644,7 +741,10 @@
 
     // --- UI SETUP ---
     var badChar = String.fromCharCode(123);
-    if (!mac || mac.startsWith("None") || mac.startsWith(badChar)) mac = "Unknown";
+    
+    // Apply asterisk fallback for nodes missing a hostname
+    if (!mac || mac.startsWith("None") || mac.startsWith(badChar)) mac = "*";
+    
     document.getElementById("macDisplay").innerText = mac;
     document.getElementById("ipDisplay").innerText = "{{ ip }}";
 
@@ -699,7 +799,7 @@
 
     // --- WEBSOCKET ---
     function connectWebSocket() {
-        if (mac === "Unknown") return;
+        if (mac === "*" || mac === "Unknown") return;
         var protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
         ws = new WebSocket(protocol + window.location.host + "/ws/" + mac);
 
@@ -715,12 +815,32 @@
                 audioInsert.play().catch(e => console.log("Auto-play blocked:", e));
             } else if (data.type === "coin_counting") {
                 const btn = document.getElementById("btnModalAction");
-                btn.disabled = true;
-                btn.innerHTML = `<span class="pulse-animation">Processing...</span>`;
-                btn.className = "btn btn-disabled";
-                btn.style.background = "#6b7280";
-                btn.style.color = "white";
-
+                
+                if (data.is_counting === true) {
+                    // Coin is dropping, lock the button
+                    btn.disabled = true;
+                    btn.innerHTML = `<span class="pulse-animation">Processing...</span>`;
+                    btn.className = "btn btn-disabled";
+                    btn.style.background = "#6b7280";
+                    btn.style.color = "white";
+                } else {
+                    // Counting is finished
+                    if (sessionAddedTime > 0) {
+                        // Money in the slot
+                        btn.disabled = false;
+                        btn.innerText = "DONE & RESUME";
+                        btn.className = "btn btn-resume pulse-animation";
+                        btn.style.background = "";
+                        btn.style.color = "";
+                    } else {
+                        // No money inserted yet
+                        btn.disabled = false;
+                        btn.innerText = "CANCEL";
+                        btn.className = "btn btn-danger";
+                        btn.style.background = "var(--danger)";
+                        btn.style.color = "white";
+                    }
+                }
             } else if (data.type === "coin_inserted") {
                 localTime = data.time_remaining;
                 handleSlotLogic(data);
@@ -905,10 +1025,10 @@
         let header = document.createElement("div");
         header.className = "stat-row border-bottom";
         header.style.padding = "10px 15px";
-        header.style.background = "#f8fafc";
+        header.style.background = "var(--bg-color)"; 
         header.style.fontSize = "0.75rem";
         header.style.fontWeight = "700";
-        header.style.color = "#94a3b8";
+        header.style.color = "var(--text-sub)"; 
         header.style.textTransform = "uppercase";
         header.style.letterSpacing = "1px";
 
@@ -1106,23 +1226,21 @@
 
         display.innerHTML = htmlText;
         if (length <= 7) {
-            display.style.fontSize = "2rem";       // e.g. "30MIN."
+            display.style.fontSize = "2rem";       
         } else if (length <= 10) {
-            display.style.fontSize = "2rem";     // e.g. "1HR. 30MIN."
+            display.style.fontSize = "2rem";     
         } else if (length <= 15) {
-            display.style.fontSize = "1.8rem";     // e.g. "1D. 4HR. 30MIN."
+            display.style.fontSize = "1.8rem";     
         } else if (length <= 22) {
-            display.style.fontSize = "1.8rem";    // e.g. "1MO. 2D. 5HR. 30MIN."
+            display.style.fontSize = "1.8rem";    
         } else if (length <= 26) {
-            display.style.fontSize = "1.6rem";     // e.g. "1MO. 2D. 5HR. 30MIN."
+            display.style.fontSize = "1.6rem";     
         } else if (length <= 30) {
-            display.style.fontSize = "1.4rem";     // e.g. "1MO. 2D. 5HR. 30MIN."
+            display.style.fontSize = "1.4rem";     
         } else {
-            display.style.fontSize = "1.2rem";    // Very long strings
+            display.style.fontSize = "1.2rem";    
         }
     }
-
-
 
     function formatHumanTime(seconds, hideZeroSeconds = false) {
         if (!Number.isFinite(seconds) || seconds <= 0) {

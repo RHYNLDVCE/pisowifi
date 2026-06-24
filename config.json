@@ -1,7 +1,7 @@
 {
     "slot_timeout": 40,
-    "slot_expiry_timestamp": 0,
-    "inactive_timeout": 300,
+    "slot_expiry_timestamp": 1781869433.758458,
+    "inactive_timeout": 900,
     "auto_pause_enabled": true,
     "speed_limit_enabled": true,
     "global_speed_limit": 10,
@@ -10,7 +10,7 @@
     "coin_rates": "1:12,5:70,10:181,20:481",
     "pulse_value": 1,
     "restart_schedule": {
-        "enabled": false,
+        "enabled": true,
         "time": "03:05"
     },
     "points_enabled": true,
@@ -42,9 +42,9 @@
     ],
     "inactive_bytes_threshold": 500,
     "banner_text": "Watch Movies and Anime",
-    "banner_link": "http://192.168.20.166:8096/",
+    "banner_link": "http://192.168.50.166:8096/",
     "banner_order": [
-        "marcel.webp",
+        "hirara.webp",
         "jellyfin.webp"
     ],
     "free_time_enabled": false,

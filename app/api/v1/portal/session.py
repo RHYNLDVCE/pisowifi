@@ -5,7 +5,7 @@ from core import state
 from hardware import controller
 from app.api.dependencies import get_session_service
 from services.session_service import SessionService
-from .helpers import system_log
+from core.logger import system_log
 
 router = APIRouter()
 
@@ -28,7 +28,7 @@ async def enable_slot(mac: str):
         controller.current_slot_user = mac
         controller.turn_slot_on()
         state.config["slot_expiry_timestamp"] = time.time() + state.config.get("slot_timeout", 30)
-        system_log(f"SLOT OPENED by Device: {mac}")
+        system_log(f"[PORTAL_EVENT] SLOT OPENED by Device: {mac}")
         
         if mac in state.manager.active_connections:
             await state.manager.send_personal_message({

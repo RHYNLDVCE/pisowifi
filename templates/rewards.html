@@ -3,21 +3,30 @@
 {% block title %}Rewards - REYES Starlink{% endblock %}
 
 {% block styles %}
+<link href="{{ url_for('static', path='css/fonts.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', path='js/lucide.min.js') }}"></script>
+
 <style>
     :root {
-        --primary: #4f46e5;
-        --secondary: #64748b;
-        --accent: #f59e0b;
-        --success: #10b981;
-        --danger: #ef4444;
-        --bg-color: #f8fafc;
+        --primary: #0f172a;
+        --primary-light: #1e293b;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+        --success: #059669;
+        --danger: #dc2626;
+        --surface: #ffffff;
+        --bg-body: #f8fafc;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
     }
 
     body { 
-        background-color: var(--bg-color); 
-        color: #1e293b; 
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+        background-color: var(--bg-body); 
+        color: var(--text-main); 
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif; 
         margin: 0;
+        -webkit-font-smoothing: antialiased;
     }
 
     .main-wrapper { 
@@ -26,184 +35,220 @@
         min-height: 100vh; 
         display: flex; 
         flex-direction: column; 
-        background: #ffffff;
-        box-shadow: 0 0 25px rgba(0,0,0,0.05);
-        position: relative;
+        background: var(--bg-body);
+        border-left: 1px solid var(--border-color);
+        border-right: 1px solid var(--border-color);
+        box-shadow: 0 0 20px rgba(0,0,0,0.03);
     }
     
-    /* HEADER DESIGN */
+    /* HEADER DESIGN UPDATE */
     .header-card {
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-        color: white; 
-        padding: 40px 20px 55px; 
-        border-bottom-left-radius: 35px; 
-        border-bottom-right-radius: 35px;
-        text-align: center; 
-        box-shadow: 0 15px 35px -10px rgba(79, 70, 229, 0.4);
+        background-color: var(--primary);
+        color: #ffffff; 
+        padding: 2.5rem 1.5rem; 
         position: relative;
-        z-index: 10;
-    }
-    
-    .points-label { 
-        font-size: 0.8rem; 
-        text-transform: uppercase; 
-        letter-spacing: 2px; 
-        font-weight: 700; 
-        opacity: 0.85; 
-        margin-bottom: 5px;
-    }
-    
-    .points-val { 
-        font-size: 4.5rem; 
-        font-weight: 800; 
-        line-height: 1;
-        margin: 5px 0;
-        text-shadow: 0 4px 15px rgba(0,0,0,0.15);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
     }
 
-    .points-sub {
-        font-size: 1.1rem;
-        font-weight: 500;
-        opacity: 0.95;
+    .brand-title {
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #94a3b8;
+        font-weight: 600;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .stats-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--primary-light);
+        padding: 1.25rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .stat-box {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    .stat-box:first-child {
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        margin-right: 1.5rem;
+    }
+
+    .points-label, .time-label { 
+        font-size: 0.75rem; 
+        font-weight: 500; 
+        color: #cbd5e1;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .points-val, .time-val { 
+        font-size: 2rem; 
+        font-weight: 700; 
+        line-height: 1;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .unit-small {
+        font-size: 0.5em;
+        margin-left: 1px;
+        margin-right: 2px;
+        color: #94a3b8;
+        vertical-align: baseline;
+        text-transform: uppercase;
+        font-weight: 700;
     }
     
     /* CONTENT AREA */
     .content-area { 
-        padding: 0 25px 40px; 
+        padding: 0 1.5rem 2.5rem; 
         flex-grow: 1; 
-        margin-top: -30px; 
-        position: relative;
-        z-index: 20;
+        background: var(--bg-body);
     }
     
     .section-title { 
-        font-size: 1.15rem; 
-        font-weight: 700; 
-        color: #334155; 
-        margin: 60px 0 20px; 
+        font-size: 1.125rem; 
+        font-weight: 600; 
+        color: var(--text-main); 
+        margin: 2rem 0 1.25rem; 
         display: flex; 
         align-items: center; 
-        gap: 8px;
+        gap: 0.5rem;
     }
     
     /* PROMO CARD DESIGN */
     .promo-card {
-        background: white; 
-        border-radius: 20px; 
-        padding: 20px; 
-        margin-bottom: 15px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 4px 10px -3px rgba(0, 0, 0, 0.03); 
-        border: 1px solid #f1f5f9;
+        background: var(--surface); 
+        border-radius: 12px; 
+        padding: 1.25rem; 
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
         display: flex; 
         justify-content: space-between; 
         align-items: center;
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: border-color 0.2s ease;
     }
-    
-    .promo-card:active { transform: scale(0.98); }
+
+    .promo-card:hover {
+        border-color: #cbd5e1;
+    }
     
     .promo-info {
         display: flex;
         flex-direction: column;
         justify-content: center;
-        gap: 4px;
+        gap: 0.25rem;
     }
 
     .promo-name { 
         margin: 0; 
-        font-size: 1.15rem; 
-        font-weight: 700; 
-        color: #1e293b; 
+        font-size: 1rem; 
+        font-weight: 600; 
+        color: var(--text-main); 
     }
     
     .promo-cost { 
         margin: 0;
-        color: var(--secondary); 
-        font-weight: 500; 
-        font-size: 0.95rem; 
-    }
-    
-    .cost-highlight {
-        color: var(--accent);
-        font-weight: 700;
+        color: var(--text-muted); 
+        font-size: 0.875rem; 
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
     }
     
     /* BUTTONS */
     .btn-redeem {
-        background: var(--accent); 
-        color: white; 
-        border: none; 
-        padding: 12px 24px;
-        border-radius: 12px; 
-        font-weight: 700; 
-        font-size: 0.95rem; 
+        background: var(--surface); 
+        color: var(--accent); 
+        border: 1px solid var(--accent); 
+        padding: 0.6rem 1.25rem;
+        border-radius: 6px; 
+        font-weight: 600; 
+        font-size: 0.875rem; 
         cursor: pointer;
-        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
-        transition: background 0.2s;
-        min-width: 100px;
+        transition: all 0.2s ease;
+        min-width: 90px;
+        font-family: inherit;
     }
     
-    .btn-redeem:hover { background: #d97706; }
+    .btn-redeem:hover:not(:disabled) { 
+        background: var(--accent); 
+        color: #ffffff;
+    }
     
     .btn-redeem:disabled { 
-        background: #e2e8f0; 
+        background: #f1f5f9; 
         color: #94a3b8; 
+        border-color: #e2e8f0;
         cursor: not-allowed; 
-        box-shadow: none; 
     }
     
-    .btn-back-wrapper { margin-top: 35px; text-align: center; }
+    .btn-back-wrapper { 
+        margin-top: 2.5rem; 
+        text-align: center; 
+    }
 
     .btn-back {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        padding: 12px 25px;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
         background: transparent; 
-        border: 2px solid #e2e8f0; 
-        border-radius: 50px;
-        color: #64748b; 
+        border: 1px solid var(--border-color); 
+        border-radius: 8px;
+        color: var(--text-muted); 
         text-decoration: none; 
-        font-weight: 600; 
-        font-size: 0.95rem;
-        transition: all 0.2s;
+        font-weight: 500; 
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
     }
     
     .btn-back:hover { 
-        border-color: #cbd5e1; 
-        background: #f8fafc;
-        color: #334155;
+        background: var(--surface);
+        color: var(--text-main);
     }
 
     /* EMPTY STATE */
     .empty-state {
         text-align: center;
-        padding: 50px 20px;
-        color: #94a3b8;
-        background: #f8fafc;
-        border-radius: 16px;
-        border: 2px dashed #e2e8f0;
-        margin-top: 10px;
+        padding: 3rem 1.5rem;
+        color: var(--text-muted);
+        background: var(--surface);
+        border-radius: 12px;
+        border: 1px dashed var(--border-color);
+        margin-top: 1rem;
     }
 
-    /* --- NEW MODAL STYLES --- */
+    .empty-state h3 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1rem;
+        color: var(--text-main);
+    }
+
+    /* MODAL STYLES */
     .modal-overlay {
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(4px);
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(2px);
         z-index: 1000;
         display: flex;
         align-items: center;
         justify-content: center;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.3s ease;
+        transition: opacity 0.2s ease;
     }
 
     .modal-overlay.active {
@@ -212,130 +257,120 @@
     }
 
     .modal-card {
-        background: white;
-        width: 85%;
-        max-width: 320px;
-        padding: 30px 25px;
-        border-radius: 28px;
+        background: var(--surface);
+        width: 90%;
+        max-width: 360px;
+        padding: 2rem 1.5rem;
+        border-radius: 16px;
         text-align: center;
-        transform: translateY(20px) scale(0.95);
-        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        transform: translateY(10px);
+        transition: transform 0.2s ease;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
     }
 
     .modal-overlay.active .modal-card {
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
     }
 
-    .modal-icon {
-        width: 80px;
-        height: 80px;
-        margin: 0 auto 20px;
+    .modal-icon-wrapper {
         display: flex;
-        align-items: center;
         justify-content: center;
-        border-radius: 50%;
-        font-size: 40px;
+        margin-bottom: 1.25rem;
     }
-
-    /* Icon Types */
-    .icon-confirm { background: #fef3c7; color: #d97706; }
-    .icon-success { background: #d1fae5; color: #10b981; }
-    .icon-error { background: #fee2e2; color: #ef4444; }
 
     .modal-title {
-        margin: 0 0 10px;
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #1e293b;
+        margin: 0 0 0.75rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-main);
     }
 
     .modal-text {
-        margin: 0 0 25px;
-        font-size: 1rem;
-        color: #64748b;
+        margin: 0 0 1.5rem;
+        font-size: 0.95rem;
+        color: var(--text-muted);
         line-height: 1.5;
     }
 
     .modal-actions {
         display: flex;
-        gap: 12px;
+        gap: 0.75rem;
         justify-content: center;
     }
 
     .btn-modal {
         flex: 1;
-        padding: 14px;
-        border-radius: 12px;
-        font-weight: 700;
-        font-size: 1rem;
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.95rem;
         border: none;
         cursor: pointer;
-        transition: transform 0.1s;
+        transition: background-color 0.2s;
+        font-family: inherit;
     }
-    .btn-modal:active { transform: scale(0.96); }
 
-    .btn-cancel { background: #f1f5f9; color: #64748b; }
-    .btn-confirm { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
-    .btn-success { background: var(--success); color: white; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); width: 100%; }
+    .btn-cancel { 
+        background: var(--bg-body); 
+        color: var(--text-main); 
+        border: 1px solid var(--border-color);
+    }
+    .btn-cancel:hover { background: #e2e8f0; }
+    
+    .btn-confirm { 
+        background: var(--accent); 
+        color: white; 
+    }
+    .btn-confirm:hover { background: var(--accent-hover); }
 
-    /* Animation for Success Icon */
-    .checkmark-circle {
-        stroke-dasharray: 166;
-        stroke-dashoffset: 166;
-        stroke-width: 2;
-        stroke-miterlimit: 10;
-        stroke: #10b981;
-        fill: none;
-        animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
-    }
-    .checkmark {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        display: block;
-        stroke-width: 2;
-        stroke: #fff;
-        stroke-miterlimit: 10;
-        margin: 10% auto;
-        box-shadow: inset 0px 0px 0px #10b981;
-        animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
-    }
-    .checkmark-check {
-        transform-origin: 50% 50%;
-        stroke-dasharray: 48;
-        stroke-dashoffset: 48;
-        animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
-    }
-    @keyframes stroke { 100% { stroke-dashoffset: 0; } }
-    @keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }
-    @keyframes fill { 100% { box-shadow: inset 0px 0px 0px 30px #10b981; } }
+    .btn-full { width: 100%; }
+
+    .lucide-spin { animation: spin 1s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="main-wrapper">
     <div class="header-card">
-        <div class="points-label">Your Balance</div>
-        <div class="points-val">
-            <span style="font-size: 0.8em; color: #fbbf24; text-shadow: 0 2px 10px rgba(251, 191, 36, 0.4);">★</span> 
-            {{ points }}
+        <div class="brand-title">REYES Starlink</div>
+        
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="points-label">Balance</div>
+                <div class="points-val">
+                    <i data-lucide="credit-card" style="width: 24px; height: 24px; color: #94a3b8;"></i>
+                    {{ points }}
+                </div>
+            </div>
+
+            <div class="stat-box">
+                <div class="time-label">Time Remaining</div>
+                <div class="time-val" id="timeDisplay">
+                    --:--
+                </div>
+            </div>
         </div>
-        <div class="points-sub">Loyalty Points</div>
     </div>
 
     <div class="content-area">
         {% if not enabled %}
             <div class="empty-state">
-                <h3>System Disabled</h3>
-                <p style="margin:5px 0 0;">The rewards system is currently offline.</p>
+                <div style="display: flex; justify-content: center; margin-bottom: 1rem;">
+                    <i data-lucide="power-off" style="width: 32px; height: 32px; color: #94a3b8;"></i>
+                </div>
+                <h3>System Offline</h3>
+                <p style="margin:0; font-size: 0.875rem;">The rewards system is currently unavailable.</p>
             </div>
         {% else %}
-            <div class="section-title">🎁 Available Rewards</div>
+            <div class="section-title">
+                <i data-lucide="list" style="width: 20px; height: 20px; color: var(--text-muted);"></i>
+                Reward Catalog
+            </div>
             
             {% if promos|length == 0 %}
                 <div class="empty-state">
-                    <p>No rewards available right now.</p>
+                    <p style="margin: 0;">No active promotions at this time.</p>
                 </div>
             {% endif %}
 
@@ -344,7 +379,8 @@
                 <div class="promo-info">
                     <div class="promo-name">{{ p.name }}</div>
                     <div class="promo-cost">
-                        Cost: <span class="cost-highlight">{{ p.cost | int }} Points</span>
+                        <i data-lucide="arrow-right-circle" style="width: 14px; height: 14px;"></i>
+                        {{ p.cost | int }} Points
                     </div>
                 </div>
                 
@@ -366,7 +402,8 @@
 
         <div class="btn-back-wrapper">
             <a href="/" class="btn-back">
-                Back to Home
+                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+                Return to Dashboard
             </a>
         </div>
     </div>
@@ -377,13 +414,117 @@
         <div id="modalContent"></div>
     </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
+    // Initialize icons on load
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // --- TIMER LOGIC ---
+    var mac = "{{ mac | default('Unknown', true) }}"; 
+    let localTime = 0;
+
+    // 1. Instantly load cached time for a seamless UI experience
+    const cachedTime = localStorage.getItem("piso_time_" + mac);
+    if (cachedTime && !isNaN(parseInt(cachedTime))) {
+        localTime = parseInt(cachedTime);
+        updateTimerDisplay(localTime);
+    }
+
+    // 2. Fetch the true, authoritative time from the server
+    async function syncTimeWithServer() {
+        if (mac === "Unknown" || !mac) return;
+        
+        try {
+            let res = await fetch(`/status?mac=${mac}`);
+            let data = await res.json();
+            
+            if (data && data.time_remaining !== undefined) {
+                localTime = parseInt(data.time_remaining);
+                updateTimerDisplay(localTime);
+                localStorage.setItem("piso_time_" + mac, localTime);
+                console.info('[Rewards] Timer synchronized with server:', localTime);
+            }
+        } catch(e) {
+            console.warn('[Rewards] Failed to sync time with server, falling back to local cache.');
+        }
+    }
+
+    // Execute sync immediately on page load
+    syncTimeWithServer();
+
+    // 3. Tick down the time locally while the user browses the rewards
+    setInterval(() => {
+        if (localTime > 0) {
+            localTime--;
+            updateTimerDisplay(localTime);
+            // Sync it back to local storage periodically
+            if (localTime % 5 === 0) {
+                localStorage.setItem("piso_time_" + mac, localTime);
+            }
+        } else {
+            updateTimerDisplay(0);
+        }
+    }, 1000);
+
+    function updateTimerDisplay(seconds) {
+        const display = document.getElementById("timeDisplay");
+        if (!display) return;
+        
+        const { htmlText } = formatHumanTime(seconds);
+        display.innerHTML = htmlText;
+    }
+
+    function formatHumanTime(seconds, hideZeroSeconds = false) {
+        if (!Number.isFinite(seconds) || seconds <= 0) {
+            return { plainText: "--", htmlText: "--", length: 2 };
+        }
+
+        const YEAR = 31104000;
+        const MONTH = 2592000;
+        const DAY = 86400;
+        const HOUR = 3600;
+        const MIN = 60;
+
+        const y = Math.floor(seconds / YEAR);
+        const mo = Math.floor((seconds % YEAR) / MONTH);
+        const d = Math.floor((seconds % MONTH) / DAY);
+        const h = Math.floor((seconds % DAY) / HOUR);
+        const m = Math.floor((seconds % HOUR) / MIN);
+        const s = seconds % MIN;
+
+        const partsText = []; const partsHtml = [];
+        const unit = (label) => `<span class="unit-small">${label}</span>`;
+
+        if (y > 0) { partsText.push(`${y}YR.`); partsHtml.push(`${y}${unit("YR.")}`); }
+        if (mo > 0) { partsText.push(`${mo}MO.`); partsHtml.push(`${mo}${unit("MO.")}`); }
+        if (d > 0) { partsText.push(`${d}D.`); partsHtml.push(`${d}${unit("D.")}`); }
+        if (h > 0) { partsText.push(`${h}HR.`); partsHtml.push(`${h}${unit("HR.")}`); }
+
+        if (m > 0 || y > 0 || mo > 0 || d > 0 || h > 0) {
+            partsText.push(`${m}MIN.`); partsHtml.push(`${m}${unit("MIN.")}`);
+        }
+
+        if (!hideZeroSeconds || s > 0) {
+            partsText.push(`${s}SEC.`);
+            partsHtml.push(`<span style="color: #cbd5e1;">${s}</span><span class="unit-small" style="color: #cbd5e1;">SEC.</span>`);
+        }
+
+        const plainText = partsText.join(" ");
+        const htmlText = `<span style="display:inline-block; font-size: clamp(1rem, 4vw, 1.5rem);">${partsHtml.join("")}</span>`;
+
+        return { plainText, htmlText, length: plainText.length };
+    }
+
+    // --- MODAL & REDEMPTION LOGIC ---
     const modal = document.getElementById('rewardModal');
     const modalContent = document.getElementById('modalContent');
     let currentPromoId = null;
 
-    // 1. Show Confirmation
+    // Show confirmation dialog
     function openConfirmModal(btn) {
         const id = btn.getAttribute('data-id');
         const name = btn.getAttribute('data-name');
@@ -391,28 +532,35 @@
         currentPromoId = parseInt(id);
 
         modalContent.innerHTML = `
-            <div class="modal-icon icon-confirm">🎁</div>
-            <h3 class="modal-title">Redeem Reward?</h3>
+            <div class="modal-icon-wrapper">
+                <i data-lucide="help-circle" style="width: 48px; height: 48px; color: var(--accent);"></i>
+            </div>
+            <h3 class="modal-title">Confirm Redemption</h3>
             <p class="modal-text">
-                Are you sure you want to spend <b>${cost} points</b> to get <b>"${name}"</b>?
+                Confirm deduction of <b>${cost} points</b> in exchange for <b>"${name}"</b>.
             </p>
             <div class="modal-actions">
                 <button class="btn-modal btn-cancel" onclick="closeModal()">Cancel</button>
-                <button class="btn-modal btn-confirm" onclick="processRedemption()">Yes, Redeem</button>
+                <button class="btn-modal btn-confirm" onclick="processRedemption()">Confirm</button>
             </div>
         `;
         
+        lucide.createIcons();
         modal.classList.add('active');
     }
 
-    // 2. Process & Show Success/Error
+    // Process redemption request
     async function processRedemption() {
-        // Show Loading State
+        console.info('[Rewards] Initializing redemption process for promo ID:', currentPromoId);
+
         modalContent.innerHTML = `
-            <div class="modal-icon" style="background:transparent;">⏳</div>
-            <h3 class="modal-title">Processing...</h3>
-            <p class="modal-text">Please wait while we apply your reward.</p>
+            <div class="modal-icon-wrapper">
+                <i data-lucide="loader-2" class="lucide-spin" style="width: 48px; height: 48px; color: var(--text-muted);"></i>
+            </div>
+            <h3 class="modal-title">Processing</h3>
+            <p class="modal-text">Please wait while the transaction is finalized.</p>
         `;
+        lucide.createIcons();
 
         try {
             let res = await fetch('/redeem_points', {
@@ -423,42 +571,46 @@
             let data = await res.json();
             
             if(data.status === "success") {
+                console.info('[Rewards] Redemption successful.');
                 showSuccess(data.message);
             } else {
+                console.warn('[Rewards] Redemption rejected by server:', data.message);
                 showError(data.message);
             }
         } catch(e) {
-            showError("Network connection failed.");
+            console.error('[Rewards] Network exception during redemption:', e);
+            showError("Network connection failed. Please check connectivity.");
         }
     }
 
-    // 3. Success View
+    // Display success view
     function showSuccess(msg) {
         modalContent.innerHTML = `
-            <div class="modal-icon" style="background:transparent; height:auto; margin-bottom:10px;">
-                <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
-                    <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                </svg>
+            <div class="modal-icon-wrapper">
+                <i data-lucide="check-circle-2" style="width: 48px; height: 48px; color: var(--success);"></i>
             </div>
-            <h3 class="modal-title">Awesome!</h3>
+            <h3 class="modal-title">Success</h3>
             <p class="modal-text">${msg}</p>
             <div class="modal-actions">
-                <button class="btn-modal btn-success" onclick="finishRedemption()">Okay</button>
+                <button class="btn-modal btn-cancel btn-full" onclick="finishRedemption()">Close</button>
             </div>
         `;
+        lucide.createIcons();
     }
 
-    // 4. Error View
+    // Display error view
     function showError(msg) {
         modalContent.innerHTML = `
-            <div class="modal-icon icon-error">⚠️</div>
-            <h3 class="modal-title">Oops!</h3>
+            <div class="modal-icon-wrapper">
+                <i data-lucide="alert-circle" style="width: 48px; height: 48px; color: var(--danger);"></i>
+            </div>
+            <h3 class="modal-title">Transaction Failed</h3>
             <p class="modal-text">${msg}</p>
             <div class="modal-actions">
-                <button class="btn-modal btn-cancel" onclick="closeModal()">Close</button>
+                <button class="btn-modal btn-cancel btn-full" onclick="closeModal()">Dismiss</button>
             </div>
         `;
+        lucide.createIcons();
     }
 
     function closeModal() {
@@ -467,10 +619,11 @@
 
     function finishRedemption() {
         closeModal();
-        setTimeout(() => window.location.reload(), 300);
+        // The reload will now automatically trigger the syncTimeWithServer() function on boot
+        setTimeout(() => window.location.reload(), 200);
     }
 
-    // Close on click outside
+    // Close modal on outside click
     modal.addEventListener('click', (e) => {
         if (e.target === modal) closeModal();
     });

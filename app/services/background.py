@@ -2,7 +2,6 @@ import time
 import threading
 import asyncio
 import ctypes
-import builtins
 
 from core import state
 from hardware import controller
@@ -12,12 +11,9 @@ from services.coin_service import CoinService
 from services.timer_service import TimerService
 from services.network_monitor import NetworkMonitorService
 
-def safe_print(*args, **kwargs):
-    """A bulletproof print function that survives logrotate broken pipes."""
-    try: builtins.print(*args, **kwargs)
-    except OSError: pass 
+# Import the centralized logger
+from core.logger import system_log
 
-print = safe_print
 
 def set_linux_thread_name(name):
     try:
@@ -33,39 +29,57 @@ def send_ws_update(mac, data):
                 state.manager.send_personal_message(data, mac), 
                 state.loop
             )
-        except Exception as e: print(f"WS Error: {e}")
+        except Exception as e: 
+            system_log(f"WS Error: {e}")
 
 # Instantiate Services via Dependency Injection
 coin_svc = CoinService(send_ws_update)
 timer_svc = TimerService(send_ws_update)
 monitor_svc = NetworkMonitorService(send_ws_update)
 
+
 def _coin_listener():
     set_linux_thread_name("Piso-Coin")
-    print("Coin Listener STARTED (Interrupt Driven).")
-    
-    # Pass the UI callback directly to the hardware setup
-    controller.setup(on_detected_cb=lambda: coin_svc.notify_counting(controller.current_slot_user))
+    system_log("Coin Listener STARTED (Polling Mode).")
     
     while True:
         try:
-            # Check if the interrupt handler finished counting pulses
-            coin_value = controller.check_pulse_timeout()
+            # Array used as a pointer to hold the user at the exact moment the coin drops
+            active_user = [None]
+            
+            def on_first_pulse():
+                # Lock in the user MAC address on the very first pulse
+                active_user[0] = controller.current_slot_user
+                coin_svc.notify_counting(active_user[0])
+
+            # Block here and wait for a coin to drop
+            coin_value = controller.wait_for_pulse(on_detected=on_first_pulse)
             
             if coin_value > 0:
-                print(f"\n[DEBUG] COIN DETECTED! Pulses: {coin_value}")
-                coin_svc.process_coin(coin_value, controller.current_slot_user)
+                mac = active_user[0]
+                user_log = mac if mac else "Unknown_Device"
                 
-            # Sleep gently. 0.1s uses ~0% CPU.
+                # Log exactly how the UI expects it
+                system_log(f"[COIN_INSERT] {coin_value} pulse(s) by Device: {user_log}")
+                
+                if mac:
+                    # Credit the user (even if they accidentally clicked cancel mid-count!)
+                    coin_svc.process_coin(coin_value, mac)
+                    
+                    # Tell UI we are done counting so it can show the Cancel button again
+                    coin_svc.notify_done_counting(mac)
+                
+            # Short sleep before waiting for the next customer
             time.sleep(0.1)
         except Exception as e:
-            try: print(f"CRITICAL ERROR in Coin loop: {e}")
+            try: system_log(f"CRITICAL ERROR in Coin loop: {e}")
             except: pass
             time.sleep(1)
-
+            
+            
 def _time_manager():
     set_linux_thread_name("Piso-Timer")
-    print("Time Manager & Scheduler Started...")
+    system_log("Time Manager & Scheduler Started...")
     ticks = 0
     while True:
         try:
@@ -79,19 +93,19 @@ def _time_manager():
 
             if ticks >= 30: ticks = 0
         except Exception as e:
-            try: print(f"CRITICAL ERROR in Timer loop: {e}")
+            try: system_log(f"CRITICAL ERROR in Timer loop: {e}")
             except: pass
             time.sleep(1)
 
 def _connectivity_monitor():
     set_linux_thread_name("Piso-Monitor")
-    print("Connectivity Monitor STARTED.")
+    system_log("Connectivity Monitor STARTED.")
     while True:
         try:
             time.sleep(5)
             monitor_svc.evaluate_all_connections()
         except Exception as e:
-            try: print(f"CRITICAL ERROR in Monitor loop: {e}")
+            try: system_log(f"CRITICAL ERROR in Monitor loop: {e}")
             except: pass
             time.sleep(1)
 

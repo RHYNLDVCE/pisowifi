@@ -5,7 +5,7 @@ from datetime import timedelta
 
 from core import database, security, utils
 from core.templates import templates
-from .helpers import audit_log
+from core.logger import audit_log
 
 router = APIRouter()
 

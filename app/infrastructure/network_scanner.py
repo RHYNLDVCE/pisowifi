@@ -58,21 +58,10 @@ class NetworkScanner:
 
         brand = vendors.get(oui, "Unknown")
         hostname = leases.get(mac.lower(), "")
-
-        # --- CACHED REVERSE DNS FALLBACK ---
-        if hostname == "*" or not hostname:
-            if mac in self.hostname_cache:
-                hostname = self.hostname_cache[mac]
-            else:
-                try:
-                    socket.setdefaulttimeout(0.2) 
-                    resolved_name = socket.gethostbyaddr(ip)[0]
-                    hostname = resolved_name.split('.')[0]
-                    self.hostname_cache[mac] = hostname 
-                except Exception:
-                    self.hostname_cache[mac] = ""
-                    hostname = ""
-
+        
+        if hostname == "*":
+            hostname = ""
+            
         is_known = (brand != "Unknown")
 
         if brand != "Unknown" and hostname: display = f"{brand} ({hostname})"

@@ -8,7 +8,7 @@ from app.domain.models import RenameRequest
 from app.api.dependencies import get_admin_service, get_network_scanner
 from services.admin_service import AdminService
 from infrastructure.network_scanner import NetworkScanner
-from .helpers import audit_log
+from core.logger import audit_log
 
 router = APIRouter()
 

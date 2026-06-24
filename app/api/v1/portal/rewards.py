@@ -7,6 +7,7 @@ from core.templates import templates
 from network import firewall
 from hardware import controller
 from services import background
+from core.logger import system_log
 
 router = APIRouter()
 
@@ -26,6 +27,8 @@ def claim_free_time(mac: str):
     
     if controller.current_slot_user == mac: controller.turn_slot_off()
     database.sync_user(mac, user)
+    
+    system_log(f"[{user.get('ip', 'Unknown')} | {mac}] Claimed {duration} mins of Free Time.")
     
     if mac in state.manager.active_connections:
         background.send_ws_update(mac, {
@@ -53,7 +56,9 @@ async def rewards_page(request: Request):
 @router.post("/redeem_points")
 def redeem_points(data: dict, request: Request): 
     promo_id = data.get("promo_id")
-    mac = utils.get_mac(request.client.host)
+    client_ip = request.client.host  # <-- ADDED THIS LINE to fix the crash
+    mac = utils.get_mac(client_ip)
+    
     if not mac or mac not in state.users: return {"status": "error", "message": "User not found"}
     if not state.config.get("points_enabled", False): return {"status": "error", "message": "Rewards disabled."}
 
@@ -70,6 +75,8 @@ def redeem_points(data: dict, request: Request):
     
     firewall.allow_user(mac, user.get("ip"))
     database.sync_user(mac, user)
+    
+    system_log(f"[{client_ip} | {mac}] Redeemed '{target_promo['name']}' for {target_promo['cost']} points.")
     
     if mac in state.manager.active_connections:
         background.send_ws_update(mac, {

@@ -1,7 +1,8 @@
 import math
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
-
+import asyncio
+import re
 from core import state, security
 from core.templates import templates
 from app.api.dependencies import get_admin_service, get_system_ops, get_network_scanner
@@ -12,7 +13,7 @@ from infrastructure.network_scanner import NetworkScanner
 router = APIRouter()
 
 @router.get("/admin", response_class=HTMLResponse)
-async def admin_panel(
+def admin_panel(
     request: Request, 
     search: str = "", 
     page: int = 1, 
@@ -99,7 +100,7 @@ async def get_system_stats(authorized: bool = Depends(security.is_admin), sys_op
     return sys_ops.get_system_stats()
 
 @router.get("/admin/get_infrastructure_devices")
-async def get_infrastructure_devices(authorized: bool = Depends(security.is_admin), net_scan: NetworkScanner = Depends(get_network_scanner)):
+def get_infrastructure_devices(authorized: bool = Depends(security.is_admin), net_scan: NetworkScanner = Depends(get_network_scanner)):
     active_macs = set(state.users.keys())
     custom_names = state.config.get("custom_device_names", {})
     devices = net_scan.scan_infrastructure(active_macs, custom_names)
@@ -108,3 +109,47 @@ async def get_infrastructure_devices(authorized: bool = Depends(security.is_admi
 @router.get("/admin/api/logs")
 async def get_logs_json(authorized: bool = Depends(security.is_admin), sys_ops: SystemOps = Depends(get_system_ops)):
     return {"logs": sys_ops.get_system_logs(limit=100)}
+
+
+@router.websocket("/admin/ws/logs")
+async def websocket_logs(websocket: WebSocket):
+    await websocket.accept()
+    # This regex pulls apart your professional log format: [Time] [Type] Message
+    log_pattern = re.compile(r"\[(.*?)\] \[(.*?)\] (.*)")
+    
+    try:
+        with open("system.log", "r") as f:
+            # 1. Grab the last 50 lines for the initial load
+            lines = f.readlines()
+            last_lines = lines[-50:] if len(lines) > 50 else lines
+            
+            for line in last_lines:
+                match = log_pattern.search(line)
+                if match:
+                    await websocket.send_json({
+                        "timestamp": match.group(1),
+                        "type": match.group(2),
+                        "message": match.group(3)
+                    })
+
+            # 2. Tail the file continuously (Zero CPU overhead loop)
+            while True:
+                line = f.readline()
+                if not line:
+                    await asyncio.sleep(0.5) # Wait half a second if no new logs
+                    continue
+                
+                match = log_pattern.search(line)
+                if match:
+                    await websocket.send_json({
+                        "timestamp": match.group(1),
+                        "type": match.group(2),
+                        "message": match.group(3)
+                    })
+                    
+    except WebSocketDisconnect:
+        # Admin closed the dashboard tab
+        pass
+    except Exception as e:
+        import logging
+        logging.error(f"WebSocket Log Error: {e}")

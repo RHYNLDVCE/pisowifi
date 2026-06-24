@@ -83,8 +83,8 @@
             </h3>
             
             <div id="log-status" style="font-size: 0.8rem; color: #10b981; display: flex; align-items: center; gap: 5px;">
-                <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block;"></span>
-                Live
+                <span style="width: 8px; height: 8px; background: #cbd5e1; border-radius: 50%; display: inline-block;"></span>
+                Connecting...
             </div>
         </div>
 
@@ -97,7 +97,6 @@
                         <i data-lucide="clock" style="width: 14px; height: 14px; color: #cbd5e1;"></i>
                         {{ log.timestamp }}
                     </div>
-                    
                     <div class="log-message">
                         {{ log.message }}
                     </div>
@@ -110,72 +109,89 @@
                 </div>
                 {% endfor %}
                 
-            </div> </div> </div> </div> <script>
+            </div> 
+        </div> 
+    </div> 
+</div> 
+
+<script>
     const logFeed = document.getElementById('log-feed');
     const statusText = document.getElementById('log-status');
+    let isUserScrolling = false;
 
-    // 1. Instantly snap to the newest logs on the very first page load
+    // Detect if the admin scrolled DOWN to read older history
     if (logFeed) {
-        logFeed.scrollTop = logFeed.scrollHeight;
+        logFeed.addEventListener('scroll', () => {
+            // If they are within 50px of the top, they aren't reading old logs
+            const isAtTop = logFeed.scrollTop <= 50;
+            isUserScrolling = !isAtTop;
+        });
     }
 
-    async function fetchLogs() {
-        try {
-            const response = await fetch('/admin/api/logs');
-            if (!response.ok) throw new Error("Backend unreachable");
+    function connectLogStream() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/admin/ws/logs`;
+        const ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+            statusText.innerHTML = `<span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #10b981;"></span> Live Stream Connected`;
+            if (logFeed) logFeed.innerHTML = ""; 
+        };
+
+        ws.onmessage = (event) => {
+            const log = JSON.parse(event.data);
             
-            const data = await response.json();
+            const logItem = document.createElement('div');
+            logItem.className = 'log-item';
             
-            if (data.logs && data.logs.length > 0 && logFeed) {
-                // 2. CHECK SCROLL STATE BEFORE REPLACING HTML
-                // Check if the user is currently at the bottom, or if they scrolled up to read history
-                const isAtBottom = (logFeed.scrollHeight - logFeed.scrollTop) <= (logFeed.clientHeight + 50);
-                const currentScrollPosition = logFeed.scrollTop;
+            // Dynamic coloring based on log type
+            let iconColor = "#cbd5e1"; // Default Gray
+            
+            if (log.type === "SECURITY_ALERT") iconColor = "#ef4444"; // Red
+            else if (log.type === "PORTAL_EVENT") iconColor = "#3b82f6"; // Blue
+            else if (log.type === "ADMIN_AUDIT") iconColor = "#f59e0b"; // Orange
+            else if (log.type === "COIN_INSERT" || log.type === "COIN_SUCCESS") iconColor = "#10b981"; // Emerald Green
+            else if (log.type === "WARNING") iconColor = "#eab308"; // Amber/Yellow
+            else if (log.type === "CRITICAL") iconColor = "#b91c1c"; // Dark Red
 
-                // 3. BUILD AND REPLACE HTML
-                let html = '';
-                data.logs.forEach(log => {
-                    html += `
-                        <div class="log-item">
-                            <div class="log-time">
-                                <i data-lucide="clock" style="width: 14px; height: 14px; color: #cbd5e1;"></i>
-                                ${log.timestamp}
-                            </div>
-                            <div class="log-message">
-                                ${log.message}
-                            </div>
-                        </div>
-                    `;
-                });
-                logFeed.innerHTML = html;
-                
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                }
+            logItem.innerHTML = `
+                <div class="log-time">
+                    <i data-lucide="clock" style="width: 14px; height: 14px; color: ${iconColor};"></i>
+                    ${log.timestamp}
+                </div>
+                <div class="log-message">
+                    <span style="font-size: 0.75rem; font-weight: 700; color: ${iconColor}; margin-right: 8px;">[${log.type}]</span>
+                    ${log.message}
+                </div>
+            `;
+            
+            // 1. ADD TO THE TOP
+            logFeed.prepend(logItem);
 
-                // 4. RESTORE SCROLL POSITION SYNCHRONOUSLY
-                if (isAtBottom) {
-                    // If they were at the bottom, keep snapping them to the newest logs
-                    logFeed.scrollTop = logFeed.scrollHeight;
-                } else {
-                    // If they scrolled up to read old logs, freeze their exact position
-                    logFeed.scrollTop = currentScrollPosition;
-                }
+            // 2. REMOVE FROM THE BOTTOM
+            if (logFeed.children.length > 150) {
+                logFeed.removeChild(logFeed.lastChild);
             }
 
-            if (statusText) {
-                const now = new Date().toLocaleTimeString();
-                statusText.innerHTML = `<span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block;"></span> Live (Updated ${now})`;
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons({ root: logItem });
             }
 
-        } catch (err) {
-            console.error("Log Fetch Error:", err);
-            if (statusText) {
-                statusText.innerHTML = `<span style="width: 8px; height: 8px; background: #ef4444; border-radius: 50%; display: inline-block;"></span> Connection Lost`;
+            // 3. AUTO-SCROLL TO THE TOP
+            if (!isUserScrolling) {
+                logFeed.scrollTop = 0;
             }
-        }
+        };
+
+        ws.onclose = () => {
+            statusText.innerHTML = `<span style="width: 8px; height: 8px; background: #ef4444; border-radius: 50%; display: inline-block;"></span> Connection Lost. Reconnecting...`;
+            setTimeout(connectLogStream, 3000); 
+        };
+        
+        ws.onerror = () => {
+            ws.close();
+        };
     }
 
-    // Run the background fetch every 2 seconds
-    setInterval(fetchLogs, 2000);
+    connectLogStream();
 </script>
