@@ -21,6 +21,15 @@
         }
     </style>
 
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('admin_theme');
+            const isDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (isDark && window.location.pathname.startsWith('/admin')) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
     {% block styles %}{% endblock %}
 </head>
 <body class="{% if request.url.path.startswith('/admin') %}admin-page{% endif %}">

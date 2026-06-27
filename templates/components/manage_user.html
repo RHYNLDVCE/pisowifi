@@ -346,6 +346,62 @@
         
         .btn { font-size: 0.9rem; }
     }
+
+    /* --- DARK MODE OVERRIDES --- */
+    [data-theme="dark"] {
+        --bg-light: #0f172a;
+        --text-dark: #f8fafc;
+        --text-muted: #94a3b8;
+        --card-border: #334155;
+        --primary: #818cf8;
+        --primary-hover: #6366f1;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
+    }
+
+    [data-theme="dark"] body { background: var(--bg-light); color: var(--text-dark); }
+    [data-theme="dark"] .card,
+    [data-theme="dark"] .card-header,
+    [data-theme="dark"] .action-panel {
+        background: #1e293b !important;
+        border-color: #334155 !important;
+    }
+    
+    [data-theme="dark"] .info-box {
+        background: #0f172a !important;
+        border-color: #334155 !important;
+    }
+
+    [data-theme="dark"] .bottom-actions {
+        background: #1e293b !important;
+        border-color: #334155 !important;
+    }
+
+    [data-theme="dark"] .form-input {
+        background: #0f172a !important;
+        border-color: #475569 !important;
+        color: #f8fafc !important;
+    }
+    [data-theme="dark"] .form-input:focus { border-color: var(--primary) !important; }
+
+    [data-theme="dark"] .btn-deduct { background: #334155 !important; color: #f8fafc !important; border-color: #475569 !important; }
+    [data-theme="dark"] .btn-deduct:hover { background: #475569 !important; }
+
+    [data-theme="dark"] .btn-block { background: rgba(239, 68, 68, 0.2) !important; color: #f87171 !important; border-color: rgba(239, 68, 68, 0.3) !important; }
+    [data-theme="dark"] .btn-block:hover { background: rgba(239, 68, 68, 0.3) !important; }
+
+    [data-theme="dark"] [style*="background: #ffffff"],
+    [data-theme="dark"] [style*="background:#ffffff"] { background: #1e293b !important; }
+
+    [data-theme="dark"] [style*="background: var(--bg-light)"] { background: #0f172a !important; }
+
+    [data-theme="dark"] [style*="border: 1px dashed #cbd5e1"] { border-color: #334155 !important; }
+
+    [data-theme="dark"] .amount-badge { background: rgba(16, 185, 129, 0.2) !important; color: #34d399 !important; border-color: rgba(16, 185, 129, 0.3) !important; }
+
+    @media (max-width: 550px) {
+        [data-theme="dark"] body { background: #1e293b !important; }
+    }
 </style>
 {% endblock %}
 

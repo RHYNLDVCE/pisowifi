@@ -265,6 +265,23 @@
     @keyframes spin { 
         100% { transform: rotate(360deg); } 
     }
+
+    /* --- DARK MODE OVERRIDES --- */
+    [data-theme="dark"] {
+        --bg-body: #0f172a;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --border-color: #334155;
+        --border-focus: #818cf8;
+        --primary: #818cf8;
+        --primary-hover: #6366f1;
+        --error-bg: rgba(239, 68, 68, 0.2);
+        --error-text: #f87171;
+        --error-border: rgba(239, 68, 68, 0.3);
+    }
+    
+    [data-theme="dark"] .sticker { background-color: #1e293b; border-color: #334155; color: #818cf8; }
+    [data-theme="dark"] input { background-color: #1e293b; color: #f8fafc; }
 </style>
 {% endblock %}
 
