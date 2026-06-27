@@ -314,6 +314,19 @@
     [data-theme="dark"] .coin-icon.ten { background: #334155 !important; color: #e2e8f0 !important; }
     [data-theme="dark"] .coin-icon.twenty { background: #7c2d12 !important; color: #ffedd5 !important; }
 
+    /* --- FIX DARK TEXT IN DARK MODE --- */
+    /* Use high specificity to override classes, but no !important so inline styles (like green/blue colors) are preserved */
+    [data-theme="dark"] body .stat-value,
+    [data-theme="dark"] body .brand {
+        color: var(--text-dark);
+    }
+
+    [data-theme="dark"] body .stat-title,
+    [data-theme="dark"] body table th,
+    [data-theme="dark"] body .nav-label {
+        color: var(--text-muted);
+    }
+    
     /* Target specific hardcoded text and backgrounds */
     [data-theme="dark"] [style*="color: #111827"],
     [data-theme="dark"] [style*="color:#111827"],
