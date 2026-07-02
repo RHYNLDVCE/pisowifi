@@ -1,5 +1,7 @@
 import os
 import socket
+import subprocess
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class NetworkScanner:
     def __init__(self):
@@ -80,36 +82,64 @@ class NetworkScanner:
         
     def is_reachable(self, ip: str) -> bool:
         try:
-            subprocess.check_call(['ping', '-c', '1', '-W', '1', ip], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            return True
-        except: return False
+            result = subprocess.call(
+                ['ping', '-c', '1', '-W', '2', ip],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            return result == 0
+        except Exception:
+            return False
 
     def scan_infrastructure(self, active_user_macs: set, custom_names: dict) -> list:
-        devices = []
+        import config
+        candidates = []
         leases = self.get_dhcp_leases()
-        import config 
+
+        # --- Step 1: Collect candidates from ARP table (no blocking I/O) ---
         try:
             with open('/proc/net/arp') as f:
-                lines = f.readlines()[1:] 
+                lines = f.readlines()[1:]
             for line in lines:
                 parts = line.split()
                 if len(parts) < 6: continue
                 ip, hw_type, flags, mac, mask, interface = parts[:6]
 
+                # Include all non-null ARP entries on the LAN interface
+                # (flags 0x0 = incomplete/stale entries are still valid APs)
                 if interface == config.LAN_INTERFACE and mac != "00:00:00:00:00:00" and mac not in active_user_macs:
                     if self.is_random_mac(mac) and mac not in custom_names: continue
-                    
+
                     display_name, is_known = self.get_vendor_info_and_check_type(mac, ip, leases)
                     name_upper = display_name.upper()
-                    
+
                     is_likely_phone = any(kw in name_upper for kw in ["NAM", "V2", "OPPO", "VIVO", "REALME", "IPHONE", "GALAXY", "XIAOMI", "POCO", "REDMI", "ANDROID"])
                     if is_likely_phone and mac not in custom_names: continue
-                    
-                    devices.append({
-                        "ip": ip, "mac": mac, 
+
+                    candidates.append({
+                        "ip": ip, "mac": mac,
                         "vendor": custom_names.get(mac, display_name),
                         "is_custom": (mac in custom_names and bool(custom_names[mac])),
-                        "is_online": self.is_reachable(ip)
                     })
-        except: pass
+        except:
+            pass
+
+        if not candidates:
+            return []
+
+        # --- Step 2: Ping all candidates IN PARALLEL (no sequential blocking) ---
+        # All pings fire at once — total wait is ~2s regardless of AP count.
+        def ping_device(dev):
+            dev["is_online"] = self.is_reachable(dev["ip"])
+            return dev
+
+        devices = []
+        with ThreadPoolExecutor(max_workers=min(len(candidates), 20)) as executor:
+            futures = {executor.submit(ping_device, dev): dev for dev in candidates}
+            for future in as_completed(futures):
+                try:
+                    devices.append(future.result())
+                except Exception:
+                    pass
+
         return devices
