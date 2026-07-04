@@ -102,7 +102,7 @@ def _connectivity_monitor():
     system_log("Connectivity Monitor STARTED.")
     while True:
         try:
-            time.sleep(5)
+            time.sleep(15)  # 5s → 15s: still fast enough for 900s idle timeout, 3x less overhead
             monitor_svc.evaluate_all_connections()
         except Exception as e:
             try: system_log(f"CRITICAL ERROR in Monitor loop: {e}")

@@ -1,4 +1,6 @@
 {
+    "wan_upload_mbps": 70,
+    "wan_speed_mbps": 100,
     "slot_timeout": 40,
     "slot_expiry_timestamp": 1781869433.758458,
     "inactive_timeout": 900,

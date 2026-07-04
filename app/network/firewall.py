@@ -17,7 +17,7 @@ if not CONNTRACK_PATH:
         CONNTRACK_PATH = "/usr/bin/conntrack"
 
 def run_cmd(args, check=False):
-    """Helper to run commands safely with OS lock protection."""
+    """Helper to run iptables/ipset commands safely with OS lock protection."""
     try:
         if isinstance(args, str):
             args = args.split()
@@ -26,6 +26,25 @@ def run_cmd(args, check=False):
     except subprocess.TimeoutExpired:
         print(f"[Firewall Timeout] OS locked command: {' '.join(args)}", flush=True)
     except subprocess.CalledProcessError:
+        pass
+
+def run_tc_cmd(args, check=False):
+    """Helper for TC commands with a longer timeout (kernel qdisc lock can be slow under load)."""
+    try:
+        if isinstance(args, str):
+            args = args.split()
+        subprocess.run(args, check=check, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+    except subprocess.TimeoutExpired:
+        print(f"[TC Timeout] Command: {' '.join(args)}", flush=True)
+    except subprocess.CalledProcessError:
+        pass
+
+def run_sysctl(param, value):
+    """Set a sysctl parameter safely, supporting values with spaces (e.g. tcp_rmem)."""
+    try:
+        subprocess.run(["sysctl", "-w", f"{param}={value}"],
+                       check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+    except Exception:
         pass
 
 def get_uid(ip):
@@ -39,17 +58,42 @@ def get_uid(ip):
 def init_firewall():
     print("Initializing Starlink-Optimized Firewall (IPSet + TC + Cloudflare DNS)...")
 
-    # Enable BBR TCP Congestion Control for better throughput and lower latency
-    run_cmd("sysctl -w net.core.default_qdisc=fq")
-    run_cmd("sysctl -w net.ipv4.tcp_congestion_control=bbr")
+    # --- KERNEL PERFORMANCE TUNING ---
+    # BBR TCP Congestion Control: better throughput and lower latency vs CUBIC
+    run_sysctl("net.core.default_qdisc", "fq")
+    run_sysctl("net.ipv4.tcp_congestion_control", "bbr")
+
+    # TCP Socket Buffers (16 MB max) — prevents drops on Starlink's high-BDP link
+    # BDP for 300Mbps @ 50ms RTT ≈ 1.87 MB, so 16 MB gives plenty of headroom
+    run_sysctl("net.core.rmem_max", "16777216")
+    run_sysctl("net.core.wmem_max", "16777216")
+    run_sysctl("net.core.rmem_default", "1048576")
+    run_sysctl("net.core.wmem_default", "1048576")
+    run_sysctl("net.ipv4.tcp_rmem", "4096 87380 16777216")
+    run_sysctl("net.ipv4.tcp_wmem", "4096 65536 16777216")
+    run_sysctl("net.core.netdev_max_backlog", "5000")
+
+    # TCP Reliability & Latency (critical for satellite links with variable loss)
+    run_sysctl("net.ipv4.tcp_sack", "1")           # Selective ACK — avoids full retransmits on loss
+    run_sysctl("net.ipv4.tcp_timestamps", "1")      # Accurate RTT measurement (required by BBR)
+    run_sysctl("net.ipv4.tcp_fastopen", "3")        # TCP Fast Open — saves 1 RTT per new connection
+    run_sysctl("net.ipv4.tcp_tw_reuse", "1")        # Reuse TIME_WAIT sockets faster
+    run_sysctl("net.ipv4.tcp_fin_timeout", "15")    # FIN cleanup: 60s → 15s (frees conntrack slots)
+    run_sysctl("net.ipv4.ip_local_port_range", "1024 65535")  # More ephemeral ports for NAT under load
+
+    # Conntrack Pool — prevent NAT table overflow with many concurrent clients
+    run_sysctl("net.netfilter.nf_conntrack_max", "65536")
+    run_sysctl("net.netfilter.nf_conntrack_tcp_timeout_established", "1800")  # 60min → 30min idle
+    run_sysctl("net.netfilter.nf_conntrack_udp_timeout", "30")
+    run_sysctl("net.netfilter.nf_conntrack_udp_timeout_stream", "60")
 
     # 1. Enable IPv4 Forwarding & Disable IPv6 (Forces all traffic into our IPv4 rules)
-    run_cmd("sysctl -w net.ipv4.ip_forward=1")
-    run_cmd("sysctl -w net.ipv6.conf.all.disable_ipv6=1")
-    run_cmd("sysctl -w net.ipv6.conf.default.disable_ipv6=1")
-    
+    run_sysctl("net.ipv4.ip_forward", "1")
+    run_sysctl("net.ipv6.conf.all.disable_ipv6", "1")
+    run_sysctl("net.ipv6.conf.default.disable_ipv6", "1")
+
     # 2. Disable ECN - Helps with some CDN (Lazada) handshake stalls over Starlink
-    run_cmd("sysctl -w net.ipv4.tcp_ecn=0")
+    run_sysctl("net.ipv4.tcp_ecn", "0")
 
     # 3. Hardware Offload Disable (Fixes some throttling/corruption issues on USB adapters)
     try:
@@ -72,8 +116,19 @@ def init_firewall():
         "iptables -I INPUT 1 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT",
         "iptables -I FORWARD 1 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT",
 
+        # Gaming UDP port marking (mark 99 = high-priority queue)
         "iptables -t mangle -A PREROUTING -p udp -m multiport --sports 5000:5500,7074:7750,10000:10009,30000:30300 -j MARK --set-mark 99",
         "iptables -t mangle -A PREROUTING -p udp -m multiport --dports 5000:5500,7074:7750,10000:10009,30000:30300 -j MARK --set-mark 99",
+
+        # --- QoS DSCP MARKING (synergizes with cake diffserv4 on WAN egress) ---
+        # VoIP/WebRTC/STUN — Expedited Forwarding (highest priority, targets <5ms queue)
+        "iptables -t mangle -A PREROUTING -p udp -m multiport --dports 3478,3479,5349,19302 -j DSCP --set-dscp-class EF",
+        "iptables -t mangle -A PREROUTING -p tcp -m multiport --dports 3478,3479,5349 -j DSCP --set-dscp-class EF",
+        # Gaming UDP (already mark 99) — CS4 high priority
+        "iptables -t mangle -A PREROUTING -m mark --mark 99 -j DSCP --set-dscp-class CS4",
+        # Torrent/P2P — CS1 scavenger (lowest priority, won't crowd out other users)
+        "iptables -t mangle -A PREROUTING -p tcp -m multiport --dports 6881:6889 -j DSCP --set-dscp-class CS1",
+        "iptables -t mangle -A PREROUTING -p udp -m multiport --dports 6881:6889 -j DSCP --set-dscp-class CS1",
         
         # Default Policies
         "iptables -P FORWARD DROP", 
@@ -93,9 +148,12 @@ def init_firewall():
         f"iptables -A FORWARD -i {config.LAN_INTERFACE} -p udp --dport 53 -j ACCEPT",
         f"iptables -A FORWARD -i {config.LAN_INTERFACE} -p tcp --dport 53 -j ACCEPT",
         
-        # [STARLINK DNS FIX] Force Authorized users to Cloudflare DNS (1.1.1.1) to fix Geo-IP CDNs
-        f"iptables -t nat -A PREROUTING -m set --match-set {IPSET_NAME} src -p udp --dport 53 -j DNAT --to-destination 1.1.1.1:53",
-        f"iptables -t nat -A PREROUTING -m set --match-set {IPSET_NAME} src -p tcp --dport 53 -j DNAT --to-destination 1.1.1.1:53",
+        # [STARLINK DNS FIX] Round-robin between Cloudflare 1.1.1.1 and 1.0.0.1 for failover
+        # Every other DNS query goes to 1.1.1.1; remaining fall through to 1.0.0.1
+        f"iptables -t nat -A PREROUTING -m set --match-set {IPSET_NAME} src -p udp --dport 53 -m statistic --mode nth --every 2 --packet 0 -j DNAT --to-destination 1.1.1.1:53",
+        f"iptables -t nat -A PREROUTING -m set --match-set {IPSET_NAME} src -p udp --dport 53 -j DNAT --to-destination 1.0.0.1:53",
+        f"iptables -t nat -A PREROUTING -m set --match-set {IPSET_NAME} src -p tcp --dport 53 -m statistic --mode nth --every 2 --packet 0 -j DNAT --to-destination 1.1.1.1:53",
+        f"iptables -t nat -A PREROUTING -m set --match-set {IPSET_NAME} src -p tcp --dport 53 -j DNAT --to-destination 1.0.0.1:53",
 
         # Redirect Unauthorized DNS to local portal (10.0.0.1)
         f"iptables -t nat -A PREROUTING -i {config.LAN_INTERFACE} -m set ! --match-set {IPSET_NAME} src -p udp --dport 53 -j DNAT --to-destination 10.0.0.1:53",
@@ -107,7 +165,7 @@ def init_firewall():
         # Block Unauthorized HTTPS (443) with DROP (iPhone Compatibility)
         f"iptables -A FORWARD -i {config.LAN_INTERFACE} -m set ! --match-set {IPSET_NAME} src -p tcp --dport 443 -j DROP",
 
-        # --- STARLINK MSS CLAMPING (Hardcoded to 1300 to survive satellite CGNAT overhead) ---
+        # --- STARLINK MSS CLAMPING (1300 to survive satellite CGNAT overhead) ---
         "iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1300",
 
         # --- THE HOTSPOT KILLER (TTL=1) ---
@@ -120,13 +178,21 @@ def init_firewall():
     for cmd in cmds: 
         run_cmd(cmd)
 
-    # 6. Initialize Traffic Control (Speed Limiter)
+    # 6. Initialize Traffic Control
     try:
-        run_cmd(f"tc qdisc del dev {config.LAN_INTERFACE} root")
-        run_cmd(f"tc qdisc del dev {config.LAN_INTERFACE} ingress")
-        run_cmd(f"tc qdisc add dev {config.LAN_INTERFACE} root handle 1: htb default 10")
-        run_cmd(f"tc class add dev {config.LAN_INTERFACE} parent 1: classid 1:ffff htb rate 1000mbit")
-        run_cmd(f"tc qdisc add dev {config.LAN_INTERFACE} ingress")
+        # LAN egress (br0): HTB root — provides per-user hard rate limiting classes
+        run_tc_cmd(f"tc qdisc del dev {config.LAN_INTERFACE} root")
+        run_tc_cmd(f"tc qdisc del dev {config.LAN_INTERFACE} ingress")
+        run_tc_cmd(f"tc qdisc add dev {config.LAN_INTERFACE} root handle 1: htb default 10")
+        run_tc_cmd(f"tc class add dev {config.LAN_INTERFACE} parent 1: classid 1:ffff htb rate 1000mbit")
+        run_tc_cmd(f"tc qdisc add dev {config.LAN_INTERFACE} ingress")
+
+        # WAN egress (eth0): cake for UPLOAD bufferbloat control — the #1 latency fix for Starlink.
+        # Under load, upload queue fills up and blocks ACKs, tanking download speeds.
+        # cake with diffserv4 auto-prioritizes DSCP-marked gaming/VoIP packets in the upload queue.
+        wan_upload = state.config.get("wan_upload_mbps", 70)
+        run_tc_cmd(f"tc qdisc del dev {config.WAN_INTERFACE} root")
+        run_tc_cmd(f"tc qdisc add dev {config.WAN_INTERFACE} root cake bandwidth {wan_upload}mbit diffserv4 nat wash")
     except Exception:
         pass
     
@@ -139,9 +205,9 @@ def remove_speed_limit(ip):
     try:
         uid = get_uid(ip)
         if uid > 0:
-            run_cmd(f"tc class del dev {config.LAN_INTERFACE} parent 1:ffff classid 1:{uid:x}")
-            run_cmd(f"tc filter del dev {config.LAN_INTERFACE} protocol ip parent 1:0 prio {uid}")
-            run_cmd(f"tc filter del dev {config.LAN_INTERFACE} protocol ip parent ffff: prio {uid}")
+            run_tc_cmd(f"tc class del dev {config.LAN_INTERFACE} parent 1:ffff classid 1:{uid:x}")
+            run_tc_cmd(f"tc filter del dev {config.LAN_INTERFACE} protocol ip parent 1:0 prio {uid}")
+            run_tc_cmd(f"tc filter del dev {config.LAN_INTERFACE} protocol ip parent ffff: prio {uid}")
     except Exception: pass
 
 def apply_speed_limit(ip):
@@ -159,30 +225,29 @@ def apply_speed_limit(ip):
         uid = get_uid(ip)
         if uid == 0: return
         
-        # Create user class
+        # Create per-user HTB class for hard rate limiting
         cmd_dl = f"tc class add dev {config.LAN_INTERFACE} parent 1:ffff classid 1:{uid:x} htb rate {speed_str} ceil {speed_str} burst 15k cburst 15k"
-        subprocess.run(cmd_dl.split(), capture_output=True)
+        run_tc_cmd(cmd_dl)
 
         if gaming_mode:
-            # Replace the manual 'prio' bands with fq_codel. 
-            # FQ_CoDel is far superior at natively interleaving gaming UDP packets ahead of TCP streams.
-            run_cmd(f"tc qdisc add dev {config.LAN_INTERFACE} parent 1:{uid:x} handle {uid:x}: fq_codel quantum 300 limit 1000")
+            # cake with diffserv4: auto-prioritizes DSCP-marked gaming/VoIP packets inside user's class
+            run_tc_cmd(f"tc qdisc add dev {config.LAN_INTERFACE} parent 1:{uid:x} handle {uid:x}: cake bandwidth {speed_str} diffserv4")
         else:
-            # Standard fq_codel for non-gaming mode
-            run_cmd(f"tc qdisc add dev {config.LAN_INTERFACE} parent 1:{uid:x} handle {uid:x}: fq_codel")
+            # cake standard: better AQM than fq_codel (COBALT algorithm, lower latency under load)
+            run_tc_cmd(f"tc qdisc add dev {config.LAN_INTERFACE} parent 1:{uid:x} handle {uid:x}: cake bandwidth {speed_str}")
 
-        # Map user's traffic to the class
-        run_cmd(f"tc filter add dev {config.LAN_INTERFACE} protocol ip parent 1:0 prio {uid} u32 match ip dst {ip} flowid 1:{uid:x}")
+        # Map user's download traffic to their class via destination IP filter
+        run_tc_cmd(f"tc filter add dev {config.LAN_INTERFACE} protocol ip parent 1:0 prio {uid} u32 match ip dst {ip} flowid 1:{uid:x}")
         
-        # Upload Limit (Policing)
+        # Upload Limit (Ingress Policing on LAN ingress)
         cmd_ul = f"tc filter add dev {config.LAN_INTERFACE} parent ffff: protocol ip prio {uid} u32 match ip src {ip} police rate {upload_kbps}kbit burst 12k drop flowid :1"
-        subprocess.run(cmd_ul.split(), capture_output=True)
+        run_tc_cmd(cmd_ul)
     except Exception: pass
 
 def refresh_all_limits(users_dict):
     try:
-        run_cmd(f"tc qdisc del dev {config.LAN_INTERFACE} ingress")
-        run_cmd(f"tc qdisc add dev {config.LAN_INTERFACE} ingress")
+        run_tc_cmd(f"tc qdisc del dev {config.LAN_INTERFACE} ingress")
+        run_tc_cmd(f"tc qdisc add dev {config.LAN_INTERFACE} ingress")
     except: pass
     for mac, data in users_dict.items():
         if data.get("status") == "connected" and data.get("ip"):
