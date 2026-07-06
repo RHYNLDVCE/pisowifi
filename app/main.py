@@ -84,11 +84,21 @@ async def startup_event():
 @app.on_event("shutdown")
 def shutdown_event():
     print("System Shutting Down...")
+    state.is_shutting_down = True
+    
+    # Force close any active portal websockets to prevent them from blocking graceful shutdown
+    if hasattr(state, "manager") and hasattr(state.manager, "active_connections"):
+        for mac, ws in list(state.manager.active_connections.items()):
+            try: asyncio.run_coroutine_threadsafe(ws.close(), state.loop)
+            except: pass
+
     try: controller.turn_slot_off()
     except: pass
     
-    try: subprocess.run(["/home/reyes/pisowifi/fail_safe.sh"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try: 
+        fail_safe_path = os.path.join(ROOT_DIR, "fail_safe.sh")
+        subprocess.run([fail_safe_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except: pass
 
 if __name__ == "__main__":
-    uvicorn.run("app.main:app", host="0.0.0.0", port=80, reload=False)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=80, reload=False, timeout_graceful_shutdown=3)

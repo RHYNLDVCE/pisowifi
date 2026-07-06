@@ -104,6 +104,8 @@ async def websocket_system_stats(websocket: WebSocket, sys_ops: SystemOps = Depe
     await websocket.accept()
     try:
         while True:
+            if getattr(state, "is_shutting_down", False):
+                break
             stats = sys_ops.get_system_stats()
             await websocket.send_json(stats)
             await asyncio.sleep(3)
@@ -148,6 +150,8 @@ async def websocket_logs(websocket: WebSocket):
 
             # 2. Tail the file continuously (Zero CPU overhead loop)
             while True:
+                if getattr(state, "is_shutting_down", False):
+                    break
                 line = f.readline()
                 if not line:
                     await asyncio.sleep(0.5) # Wait half a second if no new logs
