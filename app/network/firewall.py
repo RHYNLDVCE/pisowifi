@@ -8,8 +8,15 @@ from core import state
 # The name of the IPSet list where authorized users are stored
 IPSET_NAME = "authorized_users"
 
+import shutil
+
 # --- FIX: Better Conntrack Detection ---
-CONNTRACK_PATH = "conntrack"
+CONNTRACK_PATH = shutil.which("conntrack")
+if not CONNTRACK_PATH:
+    if os.path.exists("/usr/sbin/conntrack"):
+        CONNTRACK_PATH = "/usr/sbin/conntrack"
+    elif os.path.exists("/usr/bin/conntrack"):
+        CONNTRACK_PATH = "/usr/bin/conntrack"
 
 def run_cmd(args, check=False):
     """Helper to run iptables/ipset commands safely with OS lock protection."""
