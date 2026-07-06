@@ -136,6 +136,7 @@
     
     .stat-title { color: var(--text-muted); font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; }
     .stat-value { font-size: 2rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.03em; }
+    #stat-ips { font-size: 1.15rem; line-height: 1.4; }
 
     /* --- FORMS & BUTTONS --- */
     .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -525,56 +526,68 @@
 
         // TRIGGER SCAN ONLY WHEN DEVICE TAB IS ACTIVE
         if(sectionId === 'device') {
-            updateSystemStats();
             if (typeof loadAccessPoints === 'function') loadAccessPoints();
             if (typeof loadRestartSettings === 'function') loadRestartSettings();
         }
     }
 
     // --- SYSTEM STATS & REBOOT LOGIC ---
-    async function updateSystemStats() {
-        try {
-            const res = await fetch('/admin/system_stats');
-            if (!res.ok) return;
-            const data = await res.json();
-            
-            if (document.getElementById('stat-cpu')) {
-                document.getElementById('stat-cpu').innerText = data.cpu || "0";
-                document.getElementById('stat-temp').innerText = `Temp: ${data.temp || "--"}°C`;
-                document.getElementById('stat-ram').innerText = data.ram || "0";
-                document.getElementById('stat-ram-detail').innerText = `Used: ${data.ram_used || "0"}GB / Total: ${data.ram_total || "0"}GB`;
-                document.getElementById('stat-disk').innerText = data.disk || "0";
-                document.getElementById('stat-disk-detail').innerText = `Free: ${data.disk_free || "0"}GB`;
-                document.getElementById('stat-uptime').innerText = data.uptime || "--";
-                document.getElementById('stat-ips').innerText = data.ips || "Loading...";
-            }
+    let statsWs = null;
 
-            let currentTime = Date.now();
-            let timeDiff = (currentTime - lastTime) / 1000; 
-
-            if (timeDiff > 0 && lastRx > 0 && data.wan_rx_total) {
-                let rxDiff = data.wan_rx_total - lastRx;
-                let txDiff = data.wan_tx_total - lastTx;
-                let rxSpeed = rxDiff / timeDiff;
-                let txSpeed = txDiff / timeDiff;
-
-                if (rxSpeed < 0) rxSpeed = 0;
-                if (txSpeed < 0) txSpeed = 0;
-
-                if(document.getElementById('stat-wan-down')) {
-                    document.getElementById('stat-wan-down').innerText = formatSpeed(rxSpeed);
-                    document.getElementById('stat-wan-up').innerText = formatSpeed(txSpeed);
+    function initStatsWebSocket() {
+        if (statsWs) return;
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        statsWs = new WebSocket(`${protocol}//${window.location.host}/admin/ws/system_stats`);
+        
+        statsWs.onmessage = (event) => {
+            if (localStorage.getItem('activeAdminTab') !== 'device') return;
+            try {
+                const data = JSON.parse(event.data);
+                if (document.getElementById('stat-cpu')) {
+                    document.getElementById('stat-cpu').innerText = data.cpu || "0";
+                    document.getElementById('stat-temp').innerText = `Temp: ${data.temp || "--"}°C`;
+                    document.getElementById('stat-ram').innerText = data.ram || "0";
+                    document.getElementById('stat-ram-detail').innerText = `Used: ${data.ram_used || "0"}GB / Total: ${data.ram_total || "0"}GB`;
+                    document.getElementById('stat-disk').innerText = data.disk || "0";
+                    document.getElementById('stat-disk-detail').innerText = `Free: ${data.disk_free || "0"}GB`;
+                    document.getElementById('stat-uptime').innerText = data.uptime || "--";
+                    document.getElementById('stat-ips').innerText = data.ips || "Loading...";
                 }
+
+                let currentTime = Date.now();
+                let timeDiff = (currentTime - lastTime) / 1000; 
+
+                if (timeDiff > 0 && lastRx > 0 && data.wan_rx_total) {
+                    let rxDiff = data.wan_rx_total - lastRx;
+                    let txDiff = data.wan_tx_total - lastTx;
+                    let rxSpeed = rxDiff / timeDiff;
+                    let txSpeed = txDiff / timeDiff;
+
+                    if (rxSpeed < 0) rxSpeed = 0;
+                    if (txSpeed < 0) txSpeed = 0;
+
+                    if(document.getElementById('stat-wan-down')) {
+                        document.getElementById('stat-wan-down').innerText = formatSpeed(rxSpeed);
+                        document.getElementById('stat-wan-up').innerText = formatSpeed(txSpeed);
+                    }
+                }
+
+                lastRx = data.wan_rx_total || 0;
+                lastTx = data.wan_tx_total || 0;
+                lastTime = currentTime;
+            } catch(e) {
+                console.error("Error parsing stats websocket:", e);
             }
+        };
 
-            lastRx = data.wan_rx_total || 0;
-            lastTx = data.wan_tx_total || 0;
-            lastTime = currentTime;
-
-        } catch(e) {
-            console.error("Failed to fetch system stats:", e);
-        }
+        statsWs.onclose = () => {
+            statsWs = null;
+            setTimeout(initStatsWebSocket, 5000); // Reconnect if server restarts
+        };
     }
+    
+    // Start websocket immediately
+    initStatsWebSocket();
 
     // --- REBOOT FUNCTION ---
     async function rebootDevice() {
@@ -612,9 +625,7 @@
         }
     }
     
-    setInterval(() => {
-        if (localStorage.getItem('activeAdminTab') === 'device') updateSystemStats();
-    }, 3000);
+    // Polling removed in favor of WebSocket
 
     document.addEventListener("DOMContentLoaded", () => {
         const lastTab = localStorage.getItem('activeAdminTab');

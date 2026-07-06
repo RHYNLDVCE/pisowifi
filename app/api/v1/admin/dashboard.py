@@ -99,6 +99,20 @@ def admin_panel(
 async def get_system_stats(authorized: bool = Depends(security.is_admin), sys_ops: SystemOps = Depends(get_system_ops)):
     return sys_ops.get_system_stats()
 
+@router.websocket("/admin/ws/system_stats")
+async def websocket_system_stats(websocket: WebSocket, sys_ops: SystemOps = Depends(get_system_ops)):
+    await websocket.accept()
+    try:
+        while True:
+            stats = sys_ops.get_system_stats()
+            await websocket.send_json(stats)
+            await asyncio.sleep(3)
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        import logging
+        logging.error(f"WebSocket System Stats Error: {e}")
+
 @router.get("/admin/get_infrastructure_devices")
 def get_infrastructure_devices(authorized: bool = Depends(security.is_admin), net_scan: NetworkScanner = Depends(get_network_scanner)):
     active_macs = set(state.users.keys())

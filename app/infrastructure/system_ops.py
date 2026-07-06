@@ -53,7 +53,7 @@ class SystemOps:
             "ram": mem.percent, "ram_used": round(mem.used / (1024**3), 2),
             "ram_total": round(mem.total / (1024**3), 2),
             "disk": disk.percent, "disk_free": round(disk.free / (1024**3), 2),
-            "uptime": uptime_str, "ips": " ".join(ip_list),
+            "uptime": uptime_str, "ips": "\n".join(ip_list),
             "wan_rx_total": rx_bytes, "wan_tx_total": tx_bytes
         }
 

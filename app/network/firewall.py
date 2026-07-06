@@ -264,9 +264,13 @@ def block_user(mac, ip=None):
     try:
         user_ip = ip
         if not user_ip:
-            ip_cmd = f"arp -n | grep {mac} | awk '{{print $1}}'"
-            try: user_ip = subprocess.check_output(ip_cmd, shell=True).decode().strip()
-            except: user_ip = ""
+            try:
+                with open('/proc/net/arp') as f:
+                    for line in f:
+                        if mac.lower() in line.lower():
+                            user_ip = line.split()[0]
+                            break
+            except Exception: user_ip = ""
         
         if user_ip:
             remove_speed_limit(user_ip)
