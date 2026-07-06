@@ -5,50 +5,137 @@
     </div>
     
     <div class="stats-grid">
-        <div class="stat-card" style="border-top: 3px solid #3b82f6;">
-            <span class="stat-title" style="display: flex; align-items: center; gap: 6px;">
-                <i data-lucide="globe" style="width: 16px; height: 16px; color: #3b82f6;"></i> WAN (Internet)
-            </span>
-            <div style="display: flex; gap: 20px; align-items: center; margin-top: 10px;">
-                <div>
-                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Down</div>
-                    <div class="stat-value" id="stat-wan-down" style="color: #3b82f6; font-size: 1.3rem;">0 B/s</div>
+        <!-- PREMIUM NETWORK FLOW DASHBOARD -->
+        <style>
+            .network-flow-panel {
+                grid-column: 1 / -1; /* Span full width of grid */
+                background: linear-gradient(145deg, var(--card-bg), rgba(15, 23, 42, 0.4));
+                border: 1px solid var(--card-border);
+                border-radius: 16px;
+                padding: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                position: relative;
+                overflow: hidden;
+                gap: 15px;
+            }
+            .network-flow-panel::before {
+                content: '';
+                position: absolute;
+                top: 0; left: 0; right: 0; height: 3px;
+                background: linear-gradient(90deg, #3b82f6, #10b981, #8b5cf6);
+            }
+            .flow-node {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                flex: 1;
+                min-width: 0; /* Prevent flex overflow */
+            }
+            .flow-icon-wrap {
+                width: 54px; height: 54px;
+                border-radius: 14px;
+                background: rgba(255,255,255,0.03);
+                border: 1px solid rgba(255,255,255,0.05);
+                display: flex; align-items: center; justify-content: center;
+                flex-shrink: 0;
+            }
+            .flow-details {
+                display: flex; flex-direction: column; min-width: 0;
+            }
+            .flow-label {
+                font-size: 0.75rem;
+                color: var(--text-muted);
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 8px;
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            }
+            .flow-speeds {
+                display: flex; flex-direction: column; gap: 4px;
+            }
+            .flow-speed-item {
+                display: flex; align-items: center; gap: 6px;
+                font-size: 1.2rem; font-weight: 600; font-family: monospace;
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            }
+            .flow-divider {
+                display: flex; align-items: center; justify-content: center;
+                color: var(--card-border);
+                flex-shrink: 0;
+            }
+            
+            @media (max-width: 768px) {
+                .network-flow-panel {
+                    flex-direction: column;
+                    align-items: stretch;
+                    gap: 20px;
+                }
+                .flow-divider {
+                    transform: rotate(90deg);
+                    margin: 10px 0;
+                }
+            }
+        </style>
+
+        <div class="network-flow-panel">
+            <!-- WAN Node -->
+            <div class="flow-node">
+                <div class="flow-icon-wrap">
+                    <i data-lucide="globe" style="width: 28px; height: 28px; color: #3b82f6;"></i>
                 </div>
-                <div>
-                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Up</div>
-                    <div class="stat-value" id="stat-wan-up" style="color: #f59e0b; font-size: 1.3rem;">0 B/s</div>
+                <div class="flow-details">
+                    <div class="flow-label">WAN (INTERNET)</div>
+                    <div class="flow-speeds">
+                        <div class="flow-speed-item" style="color: #10b981;">
+                            <i data-lucide="arrow-down-to-line" style="width: 14px; height: 14px;"></i> <span id="stat-wan-down">0 B/s</span>
+                        </div>
+                        <div class="flow-speed-item" style="color: #f59e0b;">
+                            <i data-lucide="arrow-up-to-line" style="width: 14px; height: 14px;"></i> <span id="stat-wan-up">0 B/s</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="stat-card" style="border-top: 3px solid #10b981;">
-            <span class="stat-title" style="display: flex; align-items: center; gap: 6px;" id="title-lan1">
-                <i data-lucide="usb" style="width: 16px; height: 16px; color: #10b981;"></i> LAN Adapter 1
-            </span>
-            <div style="display: flex; gap: 20px; align-items: center; margin-top: 10px;">
-                <div>
-                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Down</div>
-                    <div class="stat-value" id="stat-lan1-down" style="color: #10b981; font-size: 1.3rem;">--</div>
+            <div class="flow-divider"><i data-lucide="activity" style="width: 24px; height: 24px;"></i></div>
+
+            <!-- LAN 1 Node -->
+            <div class="flow-node">
+                <div class="flow-icon-wrap">
+                    <i data-lucide="usb" style="width: 28px; height: 28px; color: #10b981;"></i>
                 </div>
-                <div>
-                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Up</div>
-                    <div class="stat-value" id="stat-lan1-up" style="color: #10b981; font-size: 1.3rem;">--</div>
+                <div class="flow-details">
+                    <div class="flow-label" id="title-lan1-text">LAN ADAPTER 1</div>
+                    <div class="flow-speeds">
+                        <div class="flow-speed-item" style="color: #10b981;">
+                            <i data-lucide="arrow-down-to-line" style="width: 14px; height: 14px;"></i> <span id="stat-lan1-down">--</span>
+                        </div>
+                        <div class="flow-speed-item" style="color: #f59e0b;">
+                            <i data-lucide="arrow-up-to-line" style="width: 14px; height: 14px;"></i> <span id="stat-lan1-up">--</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="stat-card" style="border-top: 3px solid #8b5cf6;">
-            <span class="stat-title" style="display: flex; align-items: center; gap: 6px;" id="title-lan2">
-                <i data-lucide="usb" style="width: 16px; height: 16px; color: #8b5cf6;"></i> LAN Adapter 2
-            </span>
-            <div style="display: flex; gap: 20px; align-items: center; margin-top: 10px;">
-                <div>
-                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Down</div>
-                    <div class="stat-value" id="stat-lan2-down" style="color: #8b5cf6; font-size: 1.3rem;">--</div>
+            <div class="flow-divider"><i data-lucide="activity" style="width: 24px; height: 24px;"></i></div>
+
+            <!-- LAN 2 Node -->
+            <div class="flow-node">
+                <div class="flow-icon-wrap">
+                    <i data-lucide="usb" style="width: 28px; height: 28px; color: #8b5cf6;"></i>
                 </div>
-                <div>
-                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Up</div>
-                    <div class="stat-value" id="stat-lan2-up" style="color: #8b5cf6; font-size: 1.3rem;">--</div>
+                <div class="flow-details">
+                    <div class="flow-label" id="title-lan2-text">LAN ADAPTER 2</div>
+                    <div class="flow-speeds">
+                        <div class="flow-speed-item" style="color: #10b981;">
+                            <i data-lucide="arrow-down-to-line" style="width: 14px; height: 14px;"></i> <span id="stat-lan2-down">--</span>
+                        </div>
+                        <div class="flow-speed-item" style="color: #f59e0b;">
+                            <i data-lucide="arrow-up-to-line" style="width: 14px; height: 14px;"></i> <span id="stat-lan2-up">--</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
