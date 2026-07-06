@@ -492,8 +492,7 @@
     }
 
     // --- VARIABLES FOR SPEED CALCULATION ---
-    let lastRx = 0;
-    let lastTx = 0;
+    let lastInterfaces = {};
     let lastTime = Date.now();
 
     function formatSpeed(bytes) {
@@ -557,23 +556,80 @@
                 let currentTime = Date.now();
                 let timeDiff = (currentTime - lastTime) / 1000; 
 
-                if (timeDiff > 0 && lastRx > 0 && data.wan_rx_total) {
-                    let rxDiff = data.wan_rx_total - lastRx;
-                    let txDiff = data.wan_tx_total - lastTx;
-                    let rxSpeed = rxDiff / timeDiff;
-                    let txSpeed = txDiff / timeDiff;
-
-                    if (rxSpeed < 0) rxSpeed = 0;
-                    if (txSpeed < 0) txSpeed = 0;
-
-                    if(document.getElementById('stat-wan-down')) {
-                        document.getElementById('stat-wan-down').innerText = formatSpeed(rxSpeed);
-                        document.getElementById('stat-wan-up').innerText = formatSpeed(txSpeed);
+                if (timeDiff > 0 && data.interfaces) {
+                    
+                    if (lastRx > 0 && data.wan_rx_total !== undefined) {
+                        let rxSpeed = Math.max(0, (data.wan_rx_total - lastRx) / timeDiff);
+                        let txSpeed = Math.max(0, (data.wan_tx_total - lastTx) / timeDiff);
+                        
+                        if(document.getElementById('stat-wan-down')) {
+                            document.getElementById('stat-wan-down').innerText = formatSpeed(rxSpeed);
+                            document.getElementById('stat-wan-up').innerText = formatSpeed(txSpeed);
+                        }
+                    }
+                    lastRx = data.wan_rx_total || 0;
+                    lastTx = data.wan_tx_total || 0;
+                    
+                    let lanAdapters = [];
+                    for (const [iface, stats] of Object.entries(data.interfaces)) {
+                        if (iface === data.wan_iface) continue;
+                        lanAdapters.push({name: iface, stats: stats});
+                    }
+                    
+                    lanAdapters.sort((a,b) => a.name.localeCompare(b.name));
+                    
+                    if (lanAdapters.length > 0) {
+                        let iface = lanAdapters[0].name;
+                        let stats = lanAdapters[0].stats;
+                        
+                        let titleEl = document.getElementById('title-lan1');
+                        if (titleEl && !titleEl.dataset.renamed) {
+                            titleEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> LAN 1 (${iface})`;
+                            titleEl.dataset.renamed = "true";
+                        }
+                        
+                        if (lastInterfaces[iface]) {
+                            let rxSpeed = Math.max(0, (stats.rx_bytes - lastInterfaces[iface].rx_bytes) / timeDiff);
+                            let txSpeed = Math.max(0, (stats.tx_bytes - lastInterfaces[iface].tx_bytes) / timeDiff);
+                            if(document.getElementById('stat-lan1-down')) {
+                                document.getElementById('stat-lan1-down').innerText = formatSpeed(rxSpeed);
+                                document.getElementById('stat-lan1-up').innerText = formatSpeed(txSpeed);
+                            }
+                        }
+                        lastInterfaces[iface] = stats;
+                    } else {
+                        if(document.getElementById('stat-lan1-down')) {
+                            document.getElementById('stat-lan1-down').innerText = "Unplugged";
+                            document.getElementById('stat-lan1-up').innerText = "Unplugged";
+                        }
+                    }
+                    
+                    if (lanAdapters.length > 1) {
+                        let iface = lanAdapters[1].name;
+                        let stats = lanAdapters[1].stats;
+                        
+                        let titleEl = document.getElementById('title-lan2');
+                        if (titleEl && !titleEl.dataset.renamed) {
+                            titleEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> LAN 2 (${iface})`;
+                            titleEl.dataset.renamed = "true";
+                        }
+                        
+                        if (lastInterfaces[iface]) {
+                            let rxSpeed = Math.max(0, (stats.rx_bytes - lastInterfaces[iface].rx_bytes) / timeDiff);
+                            let txSpeed = Math.max(0, (stats.tx_bytes - lastInterfaces[iface].tx_bytes) / timeDiff);
+                            if(document.getElementById('stat-lan2-down')) {
+                                document.getElementById('stat-lan2-down').innerText = formatSpeed(rxSpeed);
+                                document.getElementById('stat-lan2-up').innerText = formatSpeed(txSpeed);
+                            }
+                        }
+                        lastInterfaces[iface] = stats;
+                    } else {
+                        if(document.getElementById('stat-lan2-down')) {
+                            document.getElementById('stat-lan2-down').innerText = "Unplugged";
+                            document.getElementById('stat-lan2-up').innerText = "Unplugged";
+                        }
                     }
                 }
-
-                lastRx = data.wan_rx_total || 0;
-                lastTx = data.wan_tx_total || 0;
                 lastTime = currentTime;
             } catch(e) {
                 console.error("Error parsing stats websocket:", e);
