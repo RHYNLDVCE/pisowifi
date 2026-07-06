@@ -493,6 +493,8 @@
 
     // --- VARIABLES FOR SPEED CALCULATION ---
     let lastInterfaces = {};
+    let lastRx = 0;
+    let lastTx = 0;
     let lastTime = Date.now();
 
     function formatSpeed(bytes) {

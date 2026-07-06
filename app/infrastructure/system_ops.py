@@ -24,7 +24,12 @@ class SystemOps:
         mem = psutil.virtual_memory()
         disk = psutil.disk_usage('/')
         net_stats = psutil.net_io_counters(pernic=True)
-        wan_stats = net_stats.get(config.WAN_INTERFACE)
+        
+        wan_iface = config.WAN_INTERFACE
+        if wan_iface not in net_stats and "end0" in net_stats:
+            wan_iface = "end0"
+            
+        wan_stats = net_stats.get(wan_iface)
         
         rx_bytes = wan_stats.bytes_recv if wan_stats else 0
         tx_bytes = wan_stats.bytes_sent if wan_stats else 0
@@ -62,7 +67,7 @@ class SystemOps:
             "ram_total": round(mem.total / (1024**3), 2),
             "disk": disk.percent, "disk_free": round(disk.free / (1024**3), 2),
             "uptime": uptime_str, "ips": "\n".join(ip_list),
-            "wan_iface": config.WAN_INTERFACE,
+            "wan_iface": wan_iface,
             "wan_rx_total": rx_bytes, "wan_tx_total": tx_bytes,
             "interfaces": interfaces
         }
