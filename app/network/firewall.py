@@ -257,6 +257,8 @@ def refresh_all_limits(users_dict):
 # --- BLOCKING & AUTHORIZATION LOGIC ---
 
 def block_user(mac, ip=None):
+    from core.logger import system_log
+    
     # 1. Remove from IPSet (Instant block)
     run_cmd(["ipset", "del", IPSET_NAME, mac, "-exist"])
 
@@ -277,7 +279,13 @@ def block_user(mac, ip=None):
             if CONNTRACK_PATH:
                 run_cmd([CONNTRACK_PATH, "-D", "-s", user_ip])
                 run_cmd([CONNTRACK_PATH, "-D", "-d", user_ip])
-    except Exception: pass
+                system_log(f"[FIREWALL] Conntrack flushed for IP {user_ip}")
+            else:
+                system_log(f"[FIREWALL] CRITICAL: conntrack tool not found! Cannot kill active streams.")
+        else:
+            system_log(f"[FIREWALL] WARNING: Could not resolve IP for MAC {mac}. Active streams (TikTok/Games) might not drop.")
+    except Exception as e:
+        system_log(f"[FIREWALL] Error blocking {mac}: {e}")
 
 def allow_user(mac, ip=None):
     # 1. Add to IPSet (Instant allow)

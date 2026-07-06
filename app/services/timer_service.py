@@ -57,7 +57,9 @@ class TimerService:
                     data["time"] = 0
                     data["status"] = "expired"
                     try:
-                        firewall.block_user(mac)
+                        from core.logger import system_log
+                        system_log(f"[TIMER] User {mac} (IP: {data.get('ip')}) out of time. Disconnecting...")
+                        firewall.block_user(mac, data.get("ip"))
                         users_to_sync.append((mac, data))
                     except Exception as e:
                         import logging
