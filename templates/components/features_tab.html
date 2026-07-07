@@ -1,80 +1,109 @@
 <style>
-    /* --- PROMO ITEM STYLES (Upgraded for SaaS look) --- */
+    /* =====================================================
+       FEATURES TAB — NETWORK SETTINGS + LOYALTY
+    ===================================================== */
 
+    /* Feature card icon badge */
+    .feature-icon-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        flex-shrink: 0;
+    }
+
+    /* Promo items */
     .points-grid-custom {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr)); /* Forces exactly 50/50 split */
-        gap: 16px;
-        background: #f8fafc; 
-        padding: 20px; 
-        border-radius: 12px; 
-        border: 1px solid var(--card-border); 
-        margin-bottom: 25px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        background: #f8fafc;
+        padding: 18px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 24px;
     }
-    
+
     .promo-item {
         display: flex;
-        gap: 16px; 
-        align-items: flex-end; 
+        gap: 14px;
+        align-items: flex-end;
         background: #ffffff;
-        padding: 20px;
+        padding: 18px;
         border-radius: 12px;
-        border: 1px solid var(--card-border);
-        box-shadow: var(--shadow-sm);
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         transition: transform 0.2s, box-shadow 0.2s;
     }
+
     .promo-item:hover {
         transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
-        border-color: #cbd5e1;
+        box-shadow: 0 6px 14px rgba(0,0,0,0.07);
+        border-color: #c7d2fe;
     }
-    
+
     .promo-label {
-        font-size: 0.75rem;
-        color: var(--text-muted);
+        font-size: 0.7rem;
+        color: #64748b;
         font-weight: 700;
         text-transform: uppercase;
         margin-bottom: 6px;
         display: block;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.06em;
     }
 
     .promo-input-name {
         width: 100%;
-        padding: 10px 14px; 
-        border: 1px solid #d1d5db; 
+        padding: 9px 12px;
+        border: 1px solid #d1d5db;
         border-radius: 8px;
-        font-size: 0.95rem;
-        transition: border-color 0.2s;
+        font-size: 0.875rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
         font-family: inherit;
+        color: #0f172a;
+        background: #ffffff;
+        outline: none;
     }
-    .promo-input-name:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+
+    .promo-input-name:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+    }
 
     .promo-stats-row {
         display: flex;
-        gap: 12px;
-        align-items: flex-end; 
+        gap: 10px;
+        align-items: flex-end;
     }
 
     .promo-input-small {
-        width: 90px; 
-        padding: 10px 14px; 
-        border: 1px solid #d1d5db; 
+        width: 84px;
+        padding: 9px 12px;
+        border: 1px solid #d1d5db;
         border-radius: 8px;
         text-align: center;
-        font-size: 0.95rem;
-        transition: border-color 0.2s;
+        font-size: 0.875rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
         font-family: inherit;
+        color: #0f172a;
+        background: #ffffff;
+        outline: none;
     }
-    .promo-input-small:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+
+    .promo-input-small:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+    }
 
     .btn-delete {
-        background: #fef2f2; 
-        color: #ef4444; 
-        border: 1px solid #fecaca; 
-        width: 44px; 
-        height: 44px;
-        border-radius: 8px; 
+        background: #fef2f2;
+        color: #ef4444;
+        border: 1px solid #fecaca;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -82,36 +111,45 @@
         flex-shrink: 0;
         transition: all 0.2s;
     }
-    .btn-delete:hover { background: #fee2e2; color: #dc2626; }
 
-    /* --- MOBILE MEDIA QUERY (Max-width 768px) --- */
+    .btn-delete:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+
     @media (max-width: 768px) {
-        .promo-item { flex-direction: column; align-items: stretch; gap: 16px; padding: 16px; }
-        .promo-stats-row { display: grid; grid-template-columns: 1fr 1fr auto; width: 100%; gap: 10px; }
+        .promo-item { flex-direction: column; align-items: stretch; gap: 14px; padding: 14px; }
+        .promo-stats-row { display: grid; grid-template-columns: 1fr 1fr auto; width: 100%; gap: 8px; }
         .promo-input-small { width: 100%; }
-        .btn-delete { width: 100%; height: 48px; }
+        .btn-delete { width: 100%; height: 44px; }
+        .points-grid-custom { grid-template-columns: 1fr; }
     }
 </style>
 
 <div id="features" class="section">
-    <div style="margin-bottom: 24px;">
-        <h2 style="margin: 0; font-size: 1.5rem; color: var(--text-dark); letter-spacing: -0.02em;">Network Features</h2>
-        <p style="margin: 5px 0 0; color: var(--text-muted); font-size: 0.95rem;">Manage connectivity rules, free trials, and customer loyalty programs.</p>
+    <!-- Page Header -->
+    <div style="margin-bottom: 20px;">
+        <h2 style="margin: 0; font-size: 1.35rem; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">Network Features</h2>
+        <p style="margin: 4px 0 0; color: #64748b; font-size: 0.875rem;">Manage connectivity rules, free trials, and customer loyalty programs.</p>
     </div>
-    
+
     <form action="/admin/update_settings" method="post">
-        
+
+        <!-- Free Time Offer -->
         <div class="card">
-            <h3 style="margin:0 0 20px; display: flex; align-items: center; gap: 8px; color: var(--text-dark);">
-                <i data-lucide="gift" style="color: #8b5cf6;"></i> Free Time Offer
-            </h3>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px;">
+                <span class="feature-icon-badge" style="background: #f5f3ff;">
+                    <i data-lucide="gift" style="width: 16px; height: 16px; color: #8b5cf6;"></i>
+                </span>
+                <div>
+                    <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #0f172a;">Free Time Offer</h3>
+                    <p style="margin: 2px 0 0; font-size: 0.8rem; color: #64748b;">Grant new users a free internet trial on first connection.</p>
+                </div>
+            </div>
             <div class="settings-grid">
                 <div class="input-group">
                     <label>Enable Free Trial</label>
                     <div class="toggle-wrapper">
                         <label class="switch">
-                            <input type="checkbox" id="free_toggle" name="free_time_toggle" 
-                                   {% if free_time_enabled %}checked{% endif %} 
+                            <input type="checkbox" id="free_toggle" name="free_time_toggle"
+                                   {% if free_time_enabled %}checked{% endif %}
                                    onchange="toggleFreeInput()">
                             <span class="slider"></span>
                         </label>
@@ -128,17 +166,24 @@
             </div>
         </div>
 
+        <!-- Speed Limiter -->
         <div class="card">
-            <h3 style="margin:0 0 20px; display: flex; align-items: center; gap: 8px; color: var(--text-dark);">
-                <i data-lucide="gauge" style="color: #3b82f6;"></i> Speed Limiter
-            </h3>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px;">
+                <span class="feature-icon-badge" style="background: #eff6ff;">
+                    <i data-lucide="gauge" style="width: 16px; height: 16px; color: #3b82f6;"></i>
+                </span>
+                <div>
+                    <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #0f172a;">Speed Limiter</h3>
+                    <p style="margin: 2px 0 0; font-size: 0.8rem; color: #64748b;">Set a global bandwidth cap per connected user.</p>
+                </div>
+            </div>
             <div class="settings-grid">
                 <div class="input-group">
                     <label>Global Limiter</label>
                     <div class="toggle-wrapper">
                         <label class="switch">
-                            <input type="checkbox" id="speed_toggle" name="speed_limit_toggle" 
-                                   {% if speed_limit_enabled %}checked{% endif %} 
+                            <input type="checkbox" id="speed_toggle" name="speed_limit_toggle"
+                                   {% if speed_limit_enabled %}checked{% endif %}
                                    onchange="toggleSpeedInput()">
                             <span class="slider"></span>
                         </label>
@@ -155,17 +200,24 @@
             </div>
         </div>
 
+        <!-- Auto Pause -->
         <div class="card">
-            <h3 style="margin:0 0 20px; display: flex; align-items: center; gap: 8px; color: var(--text-dark);">
-                <i data-lucide="pause-circle" style="color: #f59e0b;"></i> Auto Pause System
-            </h3>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px;">
+                <span class="feature-icon-badge" style="background: #fffbeb;">
+                    <i data-lucide="pause-circle" style="width: 16px; height: 16px; color: #f59e0b;"></i>
+                </span>
+                <div>
+                    <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #0f172a;">Auto Pause System</h3>
+                    <p style="margin: 2px 0 0; font-size: 0.8rem; color: #64748b;">Automatically pause idle users to conserve bandwidth.</p>
+                </div>
+            </div>
             <div class="settings-grid">
                 <div class="input-group">
                     <label>Auto Pause Inactive Users</label>
                     <div class="toggle-wrapper">
                         <label class="switch">
-                            <input type="checkbox" id="pause_toggle" name="auto_pause" 
-                                   {% if auto_pause_enabled %}checked{% endif %} 
+                            <input type="checkbox" id="pause_toggle" name="auto_pause"
+                                   {% if auto_pause_enabled %}checked{% endif %}
                                    onchange="togglePauseInput()">
                             <span class="slider"></span>
                         </label>
@@ -178,25 +230,31 @@
                     <label>Inactive Timeout (Seconds)</label>
                     <input type="number" id="pause_input" name="inactive_timeout" value="{{ inactive_timeout }}"
                            {% if not auto_pause_enabled %}readonly style="background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed;"{% endif %}>
-                    <p style="color:var(--text-muted); font-size:0.8rem; margin-top:6px;">Time before an idle user is paused automatically.</p>
+                    <p style="color: #64748b; font-size: 0.8rem; margin-top: 6px;">Time before an idle user is paused automatically.</p>
                 </div>
             </div>
         </div>
 
+        <!-- Gaming Mode -->
         <div class="card">
-            <h3 style="margin:0 0 20px; display: flex; align-items: center; gap: 8px; color: var(--text-dark);">
-                <i data-lucide="gamepad-2" style="color: #ec4899;"></i> Gaming Mode
-            </h3>
-            <div class="toggle-wrapper" style="width: auto; display: inline-flex; gap: 15px; padding: 12px 20px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                <span class="feature-icon-badge" style="background: #fdf2f8;">
+                    <i data-lucide="gamepad-2" style="width: 16px; height: 16px; color: #ec4899;"></i>
+                </span>
+                <div>
+                    <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #0f172a;">Gaming Mode</h3>
+                    <p style="margin: 2px 0 0; font-size: 0.8rem; color: #64748b;">Prioritizes UDP traffic to ensure low latency for online games.</p>
+                </div>
+            </div>
+            <div class="toggle-wrapper" style="width: auto; display: inline-flex; gap: 14px; padding: 10px 16px;">
                 <label class="switch">
                     <input type="checkbox" name="gaming_mode" {% if gaming_mode_enabled %}checked{% endif %}>
                     <span class="slider"></span>
                 </label>
-                <span class="toggle-status">
+                <span id="gaming_status" class="toggle-status">
                     {% if gaming_mode_enabled %}Enabled{% else %}Disabled{% endif %}
                 </span>
             </div>
-            <p style="color:var(--text-muted); font-size:0.9rem; margin-top:12px;">Prioritizes UDP traffic to ensure low latency for online games.</p>
         </div>
 
         <input type="hidden" name="banner_text" value="{{ banner_text }}">
@@ -204,19 +262,25 @@
         <input type="hidden" name="coin_rates" value="{{ coin_rates }}">
         <input type="hidden" name="timeout" value="{{ slot_timeout }}">
 
-        <button type="submit" class="btn btn-primary" style="margin-bottom: 30px;">
-            <i data-lucide="save"></i> Save Network Settings
+        <button type="submit" class="btn btn-primary" style="margin-bottom: 24px;">
+            <i data-lucide="save" style="width: 16px; height: 16px;"></i> Save Network Settings
         </button>
     </form>
 
-<div class="card" style="border: 2px solid #eef2ff;">
-        <h3 style="margin:0 0 5px; display: flex; align-items: center; gap: 8px; color: var(--text-dark);">
-            <i data-lucide="award" style="color: #f59e0b;"></i> Loyalty Points System
-        </h3>
-        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 25px;">Configure points earned per coin inserted and create redemption promos.</p>
-        
-        <div class="points-grid-custom">
-            <div class="input-group" style="grid-column: 1 / -1; margin-bottom: 5px;">
+    <!-- Loyalty Points System -->
+    <div class="card" style="border: 2px solid #eef2ff;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+            <span class="feature-icon-badge" style="background: #fffbeb;">
+                <i data-lucide="award" style="width: 16px; height: 16px; color: #f59e0b;"></i>
+            </span>
+            <div>
+                <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #0f172a;">Loyalty Points System</h3>
+                <p style="margin: 2px 0 0; font-size: 0.8rem; color: #64748b;">Configure points earned per coin and create redemption promos.</p>
+            </div>
+        </div>
+
+        <div class="points-grid-custom" style="margin-top: 18px;">
+            <div class="input-group" style="grid-column: 1 / -1; margin-bottom: 4px;">
                 <label>Enable Rewards System</label>
                 <div class="toggle-wrapper" style="background: white;">
                     <label class="switch">
@@ -228,70 +292,52 @@
             </div>
 
             <div class="input-group">
-                <label>₱1 Coin</label>
+                <label>₱1 Coin → Points</label>
                 <input type="number" id="pts_1" step="0.1" placeholder="0.0">
             </div>
             <div class="input-group">
-                <label>₱5 Coin</label>
+                <label>₱5 Coin → Points</label>
                 <input type="number" id="pts_5" step="0.1" placeholder="1">
             </div>
             <div class="input-group">
-                <label>₱10 Coin</label>
+                <label>₱10 Coin → Points</label>
                 <input type="number" id="pts_10" step="0.1" placeholder="3">
             </div>
             <div class="input-group">
-                <label>₱20 Coin</label>
+                <label>₱20 Coin → Points</label>
                 <input type="number" id="pts_20" step="0.1" placeholder="5">
             </div>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; margin: 30px 0 15px; flex-wrap: wrap; gap: 10px;">
-            <h4 style="margin:0; font-size: 1.1rem; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="ticket"></i> Redemption Promos
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0 14px; flex-wrap: wrap; gap: 10px;">
+            <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="ticket" style="width: 16px; height: 16px; color: #6366f1;"></i> Redemption Promos
             </h4>
-            <button type="button" class="btn btn-outline" style="width: auto; padding: 8px 16px; font-size: 0.85rem; border: 1px solid var(--card-border); background: #f8fafc; color: var(--text-dark);" onclick="addPromoItem()">
-                <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Add Promo
+            <button type="button" class="btn btn-outline btn-sm" onclick="addPromoItem()">
+                <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add Promo
             </button>
         </div>
-        
-        <div id="promosList" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px;">
-        </div>
 
-        <button type="button" class="btn btn-primary" onclick="savePointsConfig()" style="background: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
-            <i data-lucide="check-circle"></i> Save Points Configuration
+        <div id="promosList" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;"></div>
+
+        <button type="button" class="btn btn-success" onclick="savePointsConfig()" style="width: 100%;">
+            <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> Save Points Configuration
         </button>
     </div>
 </div>
 
 <script>
-    // --- MAIN FORM TOGGLE LOGIC ---
     function toggleState(checkboxId, inputId, statusId) {
         var checkbox = document.getElementById(checkboxId);
         var input = document.getElementById(inputId);
         var status = document.getElementById(statusId);
 
         if (checkbox.checked) {
-            if(input) {
-                input.readOnly = false;
-                input.style.backgroundColor = '#ffffff'; 
-                input.style.color = '#0f172a';
-                input.style.cursor = 'text';
-            }
-            if(status) {
-                status.innerText = 'Enabled';
-                status.style.color = 'var(--primary)';
-            }
+            if (input) { input.readOnly = false; input.style.backgroundColor = '#ffffff'; input.style.color = '#0f172a'; input.style.cursor = 'text'; }
+            if (status) { status.innerText = 'Enabled'; status.style.color = '#6366f1'; }
         } else {
-            if(input) {
-                input.readOnly = true;
-                input.style.backgroundColor = '#f1f5f9'; 
-                input.style.color = '#94a3b8'; 
-                input.style.cursor = 'not-allowed';
-            }
-            if(status) {
-                status.innerText = 'Disabled';
-                status.style.color = 'var(--text-muted)';
-            }
+            if (input) { input.readOnly = true; input.style.backgroundColor = '#f1f5f9'; input.style.color = '#94a3b8'; input.style.cursor = 'not-allowed'; }
+            if (status) { status.innerText = 'Disabled'; status.style.color = '#64748b'; }
         }
     }
 
@@ -299,163 +345,152 @@
     function togglePauseInput() { toggleState('pause_toggle', 'pause_input', 'pause_status'); }
     function toggleFreeInput() { toggleState('free_toggle', 'free_input', 'free_status'); }
 
-    // --- POINTS SYSTEM LOGIC ---
     let currentPromos = [];
 
     function togglePointsInput() {
         var chk = document.getElementById("pointsEnabled");
         var st = document.getElementById("points_status");
-        if(chk.checked) {
-            st.innerText = "Enabled";
-            st.style.color = "var(--primary)";
-        } else {
-            st.innerText = "Disabled";
-            st.style.color = "var(--text-muted)";
-        }
+        if (chk.checked) { st.innerText = "Enabled"; st.style.color = "#6366f1"; }
+        else { st.innerText = "Disabled"; st.style.color = "#64748b"; }
     }
 
     async function loadPointsConfig() {
         try {
             let res = await fetch('/admin/get_points_config');
             let data = await res.json();
-            
             let chk = document.getElementById('pointsEnabled');
             chk.checked = data.enabled;
             togglePointsInput();
-
             let map = data.coin_map || {};
             document.getElementById('pts_1').value = map["1"] || 0.0;
             document.getElementById('pts_5').value = map["5"] || 1;
             document.getElementById('pts_10').value = map["10"] || 3;
             document.getElementById('pts_20').value = map["20"] || 5;
-
             currentPromos = data.promos || [];
             renderPromos();
-        } catch(e) { console.error(e); }
+        } catch (e) { console.error(e); }
     }
 
     function renderPromos() {
         const container = document.getElementById('promosList');
         container.innerHTML = "";
-        
+
         if (currentPromos.length === 0) {
             container.innerHTML = `
-                <div style="text-align: center; padding: 30px; border: 1px dashed var(--card-border); border-radius: 12px; background: #f8fafc; color: var(--text-muted);">
-                    <p style="margin: 0;">No active promos. Click 'Add Promo' to create one.</p>
-                </div>
-            `;
+                <div style="text-align: center; padding: 28px; border: 1.5px dashed #e2e8f0; border-radius: 12px; background: #f8fafc; color: #94a3b8;">
+                    <i data-lucide="ticket" style="width: 28px; height: 28px; opacity: 0.4; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;"></i>
+                    <p style="margin: 0; font-size: 0.875rem; font-weight: 500;">No active promos. Click 'Add Promo' to create one.</p>
+                </div>`;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
             return;
         }
 
         currentPromos.forEach((promo, index) => {
             let div = document.createElement('div');
-            div.className = "promo-item"; 
-            
+            div.className = "promo-item";
             div.innerHTML = `
-                <div style="flex: 2; min-width: 0;">
-                    <label class="promo-label">Promo Title</label>
-                    <input type="text" 
-                           class="promo-input-name" 
-                           value="${promo.name}" 
-                           onchange="updatePromo(${index}, 'name', this.value)" 
-                           placeholder="e.g. 1 Hour Special">
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: #eef2ff; border-radius: 6px; font-size: 0.65rem; font-weight: 800; color: #6366f1; flex-shrink: 0;">${index + 1}</span>
+                        <label class="promo-label" style="margin: 0;">Promo Title</label>
+                    </div>
+                    <input type="text" class="promo-input-name" value="${promo.name}"
+                           onchange="updatePromo(${index}, 'name', this.value)" placeholder="e.g. 1 Hour Special">
                 </div>
-                
                 <div class="promo-stats-row">
                     <div>
-                        <label class="promo-label">Points</label>
-                        <input type="number" 
-                               class="promo-input-small" 
-                               value="${promo.cost}" 
-                               onchange="updatePromo(${index}, 'cost', this.value)" 
-                               placeholder="0">
+                        <label class="promo-label">Points Cost</label>
+                        <input type="number" class="promo-input-small" value="${promo.cost}"
+                               onchange="updatePromo(${index}, 'cost', this.value)" placeholder="0">
                     </div>
-                           
                     <div>
                         <label class="promo-label">Time (Mins)</label>
-                        <input type="number" 
-                               class="promo-input-small" 
-                               value="${promo.minutes}" 
-                               onchange="updatePromo(${index}, 'minutes', this.value)" 
-                               placeholder="0">
+                        <input type="number" class="promo-input-small" value="${promo.minutes}"
+                               onchange="updatePromo(${index}, 'minutes', this.value)" placeholder="0">
                     </div>
-                           
                     <div>
                         <label class="promo-label" style="opacity: 0;">Del</label>
-                        <button type="button" 
-                                class="btn-delete" 
-                                onclick="removePromo(${index})"
-                                title="Remove Promo">
-                            <i data-lucide="trash-2" style="width: 20px; height: 20px;"></i>
+                        <button type="button" class="btn-delete" onclick="removePromo(${index})" title="Remove Promo">
+                            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
                         </button>
                     </div>
-                </div>
-            `;
+                </div>`;
             container.appendChild(div);
         });
 
-        // Re-initialize icons for newly created DOM elements
-        if(typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function addPromoItem() {
-        currentPromos.push({ id: Date.now(), name: "New Promo", cost: 10, minutes: 60 });
+        currentPromos.push({id: Date.now(), name: "New Promo", cost: 10, minutes: 60});
         renderPromos();
     }
 
-    function removePromo(index) {
-        currentPromos.splice(index, 1);
-        renderPromos();
-    }
+    function removePromo(index) { currentPromos.splice(index, 1); renderPromos(); }
 
     function updatePromo(index, field, value) {
-        if(field === 'cost') value = parseFloat(value);
-        if(field === 'minutes') value = parseInt(value);
+        if (field === 'cost') value = parseFloat(value);
+        if (field === 'minutes') value = parseInt(value);
         currentPromos[index][field] = value;
     }
 
     async function savePointsConfig() {
         const btn = event.currentTarget;
         const originalHtml = btn.innerHTML;
-        btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 18px; height: 18px; animation: spin 1s linear infinite;"></i> Saving...`;
-        if(typeof lucide !== 'undefined') lucide.createIcons();
+        btn.innerHTML = `<i data-lucide="loader-2" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> Saving...`;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
         btn.disabled = true;
-
-        let coinMap = {
-            "1": parseFloat(document.getElementById('pts_1').value),
-            "5": parseFloat(document.getElementById('pts_5').value),
-            "10": parseFloat(document.getElementById('pts_10').value),
-            "20": parseFloat(document.getElementById('pts_20').value)
-        };
 
         let payload = {
             enabled: document.getElementById('pointsEnabled').checked,
-            coin_map: coinMap,
+            coin_map: {
+                "1": parseFloat(document.getElementById('pts_1').value),
+                "5": parseFloat(document.getElementById('pts_5').value),
+                "10": parseFloat(document.getElementById('pts_10').value),
+                "20": parseFloat(document.getElementById('pts_20').value)
+            },
             promos: currentPromos
         };
-        
+
         try {
             let res = await fetch('/admin/save_points_config', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(payload)
             });
-            
-            if(res.ok) alert("✅ Points Configuration Saved!");
+            if (res.ok) alert("✅ Points Configuration Saved!");
             else alert("Error saving.");
-        } catch(e) {
-            alert("Network Error");
-        }
-        
+        } catch (e) { alert("Network Error"); }
+
         btn.innerHTML = originalHtml;
         btn.disabled = false;
-        if(typeof lucide !== 'undefined') lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-    // Initialize
+    // Initialize toggle status colors from checkbox state (replaces removed Jinja2 inline styles)
+    function initToggleColors() {
+        const toggles = [
+            { checkboxId: 'free_toggle',   statusId: 'free_status' },
+            { checkboxId: 'speed_toggle',  statusId: 'speed_status' },
+            { checkboxId: 'pause_toggle',  statusId: 'pause_status' },
+        ];
+        toggles.forEach(({ checkboxId, statusId }) => {
+            const cb = document.getElementById(checkboxId);
+            const st = document.getElementById(statusId);
+            if (cb && st) {
+                st.style.color = cb.checked ? '#6366f1' : '#64748b';
+            }
+        });
+        // Gaming mode — read its checkbox (no id, find by name)
+        const gamingCb = document.querySelector('input[name="gaming_mode"]');
+        const gamingSt = document.getElementById('gaming_status');
+        if (gamingCb && gamingSt) {
+            gamingSt.style.color = gamingCb.checked ? '#6366f1' : '#64748b';
+        }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         loadPointsConfig();
+        initToggleColors();
     });
 </script>
