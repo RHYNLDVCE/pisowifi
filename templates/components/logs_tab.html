@@ -184,6 +184,48 @@
         color: var(--text-light, #94a3b8);
     }
 
+    /* Mobile Responsiveness */
+    @media (max-width: 640px) {
+        .log-header-top {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 12px !important;
+        }
+        .log-search-group {
+            width: 100%;
+            justify-content: space-between !important;
+            flex-wrap: nowrap !important;
+        }
+        .log-search-wrapper {
+            flex: 1;
+        }
+        .log-search-input, .log-search-input:focus {
+            width: 100% !important;
+        }
+        #log-status {
+            padding: 6px 10px !important;
+        }
+        #log-status span:last-child {
+            /* Hide "Connecting..."/"Live Stream" text, keep only pulsing dot */
+            display: none !important;
+        }
+        .log-filter-row {
+            flex-wrap: nowrap !important;
+            overflow-x: auto;
+            padding-bottom: 12px !important;
+            -webkit-overflow-scrolling: touch;
+        }
+        .log-filter-row::-webkit-scrollbar {
+            display: none;
+        }
+        .log-results-container {
+            margin-left: 0 !important;
+            width: 100%;
+            justify-content: space-between !important;
+            margin-top: 4px;
+        }
+    }
+
     .log-empty-state p {
         margin: 0;
         font-size: 0.875rem;
@@ -229,15 +271,17 @@
 
     <div class="card">
         <!-- Card Header Row -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; background: rgba(99,102,241,0.1); border-radius: 8px;">
-                    <i data-lucide="scroll-text" style="width: 15px; height: 15px; color: #6366f1;"></i>
-                </span>
-                <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-dark, #0f172a);">Activity Feed</h3>
+        <div class="log-header-top" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(99,102,241,0.1); display: flex; align-items: center; justify-content: center; color: #6366f1;">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: var(--text-dark, #0f172a); letter-spacing: -0.02em;">Activity Feed</h3>
+                </div>
             </div>
-
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            
+            <div class="log-search-group" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <!-- Search Input -->
                 <div class="log-search-wrapper">
                     <span class="log-search-icon">
@@ -252,13 +296,13 @@
                 <!-- Live Status -->
                 <div id="log-status" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted, #64748b); display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--bg, #f8fafc); border: 1px solid var(--card-border, #e2e8f0); border-radius: 99px; white-space: nowrap;">
                     <span style="width: 6px; height: 6px; background: #cbd5e1; border-radius: 50%; display: inline-block;"></span>
-                    Connecting...
+                    <span>Connecting...</span>
                 </div>
             </div>
         </div>
 
         <!-- Filter Row -->
-        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--card-border, #f1f5f9);">
+        <div class="log-filter-row" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--card-border, #f1f5f9);">
             <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted, #64748b); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 4px;">Filter:</span>
 
             <button class="log-filter-pill active all" data-filter="ALL" onclick="setLogFilter('ALL', this)">
@@ -292,7 +336,7 @@
             </button>
 
             <!-- Results info and reset -->
-            <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+            <div class="log-results-container" style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
                 <button id="resetLogsBtn" onclick="resetLogFeed()" style="display: none; background: none; border: none; color: #ef4444; font-size: 0.72rem; font-weight: 700; cursor: pointer; padding: 0; align-items: center; gap: 4px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.7" onmouseout="this.style.opacity=1">
                     <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     Clear History
@@ -694,7 +738,7 @@
 
         ws.onopen = () => {
             if (statusText) {
-                statusText.innerHTML = `<span style="width:6px;height:6px;background:#10b981;border-radius:50%;display:inline-block;animation:pulse-dot 2s ease-in-out infinite;box-shadow:0 0 0 3px rgba(16,185,129,0.2);"></span> Live Stream`;
+                statusText.innerHTML = `<span style="width:6px;height:6px;background:#10b981;border-radius:50%;display:inline-block;animation:pulse-dot 2s ease-in-out infinite;box-shadow:0 0 0 3px rgba(16,185,129,0.2);"></span> <span>Live Stream</span>`;
                 statusText.style.color = '#10b981';
                 statusText.style.borderColor = 'rgba(16,185,129,0.25)';
                 statusText.style.background = 'rgba(16,185,129,0.07)';
@@ -728,7 +772,7 @@
 
         ws.onclose = () => {
             if (statusText) {
-                statusText.innerHTML = `<span style="width:6px;height:6px;background:#ef4444;border-radius:50%;display:inline-block;"></span> Reconnecting...`;
+                statusText.innerHTML = `<span style="width:6px;height:6px;background:#ef4444;border-radius:50%;display:inline-block;"></span> <span>Reconnecting...</span>`;
                 statusText.style.color = '#ef4444';
                 statusText.style.borderColor = 'rgba(239,68,68,0.2)';
                 statusText.style.background = 'rgba(239,68,68,0.06)';
