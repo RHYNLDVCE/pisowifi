@@ -75,23 +75,80 @@ class SystemOps:
     def reboot_device(self):
         subprocess.run(["sudo", "reboot"])
 
-    def get_system_logs(self, limit=150) -> list:
+    def _parse_log_line(self, line: str) -> dict | None:
+        """Parse a structured log line into a dict with timestamp, type, and message."""
+        import re
+        line = line.strip()
+        if not line:
+            return None
+        # Format: [timestamp] [TYPE] message
+        pattern = re.compile(r"\[(.+?)\] \[(.+?)\] (.*)")
+        match = pattern.search(line)
+        if match:
+            return {
+                "timestamp": match.group(1),
+                "type": match.group(2),
+                "message": match.group(3)
+            }
+        # Fallback: legacy format [timestamp] message
+        if line.startswith("[") and "]" in line:
+            split_idx = line.find("]")
+            return {"timestamp": line[1:split_idx], "type": "SYSTEM", "message": line[split_idx+1:].strip()}
+        return {"timestamp": "--", "type": "SYSTEM", "message": line}
+
+    def get_system_logs(self, limit: int = 200, offset: int = 0, log_type: str = None) -> list:
+        """Return parsed log entries from system.log.
+        
+        Args:
+            limit:    Max entries to return.
+            offset:   How many entries to skip from the most-recent end (for pagination).
+            log_type: Optional category filter — 'COIN', 'PORTAL', 'ADMIN', 'SECURITY', 'SYSTEM'.
+                      Maps to actual log types in the file.
+        """
         logs = []
-        if os.path.exists("system.log"):
-            try:
-                with open("system.log", "r") as f:
-                    lines = f.readlines()
-                    for line in lines[-limit:]:
-                        line = line.strip()
-                        if not line: continue
-                        if line.startswith("[") and "]" in line:
-                            split_idx = line.find("]")
-                            logs.append({"timestamp": line[1:split_idx], "message": line[split_idx+1:].strip()})
-                        else:
-                            logs.append({"timestamp": "--", "message": line})
-                    logs.reverse()
-            except: pass
-        return logs
+        if not os.path.exists("system.log"):
+            return logs
+
+        # Category → type keywords mapping (mirrors frontend getLogCategory)
+        TYPE_MAP = {
+            "COIN":     {"COIN_INSERT", "COIN_SUCCESS"},
+            "PORTAL":   {"PORTAL_EVENT"},
+            "ADMIN":    {"ADMIN_AUDIT"},
+            "SECURITY": {"SECURITY_ALERT", "CRITICAL"},
+        }
+
+        try:
+            with open("system.log", "r") as f:
+                lines = f.readlines()
+
+            # Parse all lines
+            parsed = []
+            for line in lines:
+                entry = self._parse_log_line(line)
+                if entry:
+                    parsed.append(entry)
+
+            # Apply type/category filter
+            if log_type and log_type.upper() != "ALL":
+                cat = log_type.upper()
+                if cat in TYPE_MAP:
+                    allowed = TYPE_MAP[cat]
+                    parsed = [e for e in parsed if e.get("type") in allowed]
+                else:
+                    # SYSTEM = everything not in the above categories
+                    known = {t for types in TYPE_MAP.values() for t in types}
+                    parsed = [e for e in parsed if e.get("type") not in known]
+
+            # Newest first
+            parsed.reverse()
+
+            total = len(parsed)
+            sliced = parsed[offset: offset + limit]
+
+            return {"logs": sliced, "total": total, "offset": offset, "limit": limit}
+        except Exception:
+            return {"logs": [], "total": 0, "offset": 0, "limit": limit}
+
 
     # --- File Management Helpers ---
     def get_banners(self, config_order: list) -> list:

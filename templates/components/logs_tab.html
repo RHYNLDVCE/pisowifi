@@ -1,235 +1,678 @@
 <style>
     /* =====================================================
-       LOGS TAB — COLOR-CODED ACTIVITY FEED
+       LOGS TAB — DARK-ADAPTIVE + SEARCH/FILTER
+       Uses CSS variables so dark mode works automatically
     ===================================================== */
 
     .logs-container {
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--card-border, #e2e8f0);
         border-radius: 12px;
-        background: #ffffff;
+        background: var(--card-bg, #ffffff);
         overflow: hidden;
     }
 
     .logs-scroll-area {
-        max-height: 580px;
+        max-height: 560px;
         overflow-y: auto;
     }
 
     .logs-scroll-area::-webkit-scrollbar { width: 6px; }
-    .logs-scroll-area::-webkit-scrollbar-track { background: #f8fafc; }
-    .logs-scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; border: 2px solid #f8fafc; }
+    .logs-scroll-area::-webkit-scrollbar-track { background: transparent; }
+    .logs-scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+    [data-theme="dark"] .logs-scroll-area::-webkit-scrollbar-thumb { background: #334155; }
     .logs-scroll-area::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
     .log-item {
         display: flex;
         align-items: flex-start;
-        gap: 0;
-        border-bottom: 1px solid #f1f5f9;
-        transition: background-color 0.15s ease;
+        border-bottom: 1px solid var(--card-border, #f1f5f9);
+        transition: background-color 0.12s ease;
         position: relative;
     }
 
     .log-item:last-child { border-bottom: none; }
-    .log-item:hover { background-color: #f8fafc; }
+    .log-item:hover { background-color: var(--bg, #f8fafc); }
 
-    /* Color-coded left border per log type */
     .log-item-bar {
         width: 3px;
         align-self: stretch;
         flex-shrink: 0;
         background: #e2e8f0;
-        border-radius: 0;
     }
 
     .log-item-content {
         display: flex;
-        align-items: flex-start;
-        gap: 16px;
-        padding: 14px 20px;
+        align-items: baseline;
+        gap: 14px;
+        padding: 12px 18px;
         flex: 1;
         min-width: 0;
     }
 
     .log-time {
-        min-width: 150px;
-        font-size: 0.75rem;
-        color: #94a3b8;
+        min-width: 148px;
+        font-size: 0.72rem;
+        color: var(--text-light, #94a3b8);
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         display: flex;
         align-items: center;
-        gap: 5px;
-        margin-top: 2px;
+        gap: 4px;
         flex-shrink: 0;
+        white-space: nowrap;
     }
 
+    /* ★ Critical fix: use CSS variable so dark mode works */
     .log-message {
         font-size: 0.875rem;
-        color: #0f172a;
+        color: var(--text-dark, #0f172a);
         font-weight: 500;
         line-height: 1.5;
         flex: 1;
         min-width: 0;
+        word-break: break-word;
+    }
+
+    /* Log search bar */
+    .log-search-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .log-search-input {
+        width: 220px;
+        padding: 8px 32px 8px 34px;
+        border: 1px solid var(--card-border, #d1d5db);
+        border-radius: 9px;
+        font-family: inherit;
+        font-size: 0.83rem;
+        color: var(--text-dark, #0f172a);
+        background: var(--bg, #f9fafb);
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s, width 0.2s;
+    }
+
+    .log-search-input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        width: 260px;
+        background: var(--card-bg, #ffffff);
+    }
+
+    .log-search-icon {
+        position: absolute;
+        left: 10px;
+        pointer-events: none;
+        color: var(--text-light, #94a3b8);
+        display: flex;
+        align-items: center;
+    }
+
+    .log-search-clear {
+        position: absolute;
+        right: 8px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-light, #94a3b8);
+        display: flex;
+        align-items: center;
+        padding: 2px;
+        border-radius: 4px;
+        transition: color 0.15s;
+    }
+
+    .log-search-clear:hover { color: #ef4444; }
+
+    /* Filter pill buttons */
+    .log-filter-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 5px 11px;
+        border-radius: 99px;
+        border: 1.5px solid transparent;
+        cursor: pointer;
+        background: var(--bg, #f8fafc);
+        color: var(--text-muted, #64748b);
+        transition: all 0.15s ease;
+        letter-spacing: 0.03em;
+        font-family: inherit;
+    }
+
+    .log-filter-pill:hover {
+        border-color: currentColor;
+        opacity: 0.85;
+    }
+
+    .log-filter-pill.active {
+        border-color: currentColor !important;
+        filter: brightness(1.1);
+    }
+
+    .log-filter-pill.active.all {
+        background: #6366f1;
+        color: #ffffff;
+        border-color: #6366f1 !important;
+        box-shadow: 0 2px 8px rgba(99,102,241,0.25);
+    }
+
+    /* Count badge */
+    .log-count-badge {
+        font-size: 0.68rem;
+        font-weight: 800;
+        padding: 1px 6px;
+        border-radius: 99px;
+        background: rgba(0,0,0,0.08);
+    }
+
+    [data-theme="dark"] .log-count-badge { background: rgba(255,255,255,0.12); }
+
+    /* Empty state */
+    .log-empty-state {
+        padding: 52px 20px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: var(--text-light, #94a3b8);
+    }
+
+    .log-empty-state p {
+        margin: 0;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-muted, #64748b);
+    }
+
+    .log-empty-state span {
+        font-size: 0.8rem;
+        color: var(--text-light, #94a3b8);
+    }
+
+    /* Highlighted search matches */
+    mark.log-highlight {
+        background: rgba(250, 204, 21, 0.35);
+        color: inherit;
+        border-radius: 2px;
+        padding: 0 1px;
+    }
+
+    [data-theme="dark"] mark.log-highlight {
+        background: rgba(250, 204, 21, 0.25);
     }
 
     @media (max-width: 768px) {
         .log-item-content {
             flex-direction: column;
-            gap: 4px;
-            padding: 12px 14px;
+            gap: 3px;
+            padding: 10px 14px;
         }
-        .log-time { min-width: auto; font-size: 0.7rem; }
+        .log-time { min-width: auto; font-size: 0.68rem; }
+        .log-search-input { width: 160px; font-size: 0.8rem; }
+        .log-search-input:focus { width: 180px; }
     }
 </style>
 
 <div id="logs" class="section">
     <!-- Page Header -->
     <div style="margin-bottom: 20px;">
-        <h2 style="margin: 0; font-size: 1.35rem; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">System Logs</h2>
-        <p style="margin: 4px 0 0; color: #64748b; font-size: 0.875rem;">Real-time events, administrator actions, and system security audits.</p>
+        <h2 style="margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text-dark, #0f172a);">System Logs</h2>
+        <p style="margin: 4px 0 0; color: var(--text-muted, #64748b); font-size: 0.875rem;">Real-time events, administrator actions, and system security audits.</p>
     </div>
 
     <div class="card">
-        <!-- Card Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+        <!-- Card Header Row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; background: #eef2ff; border-radius: 8px;">
+                <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; background: rgba(99,102,241,0.1); border-radius: 8px;">
                     <i data-lucide="scroll-text" style="width: 15px; height: 15px; color: #6366f1;"></i>
                 </span>
-                <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a;">Activity Feed</h3>
+                <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-dark, #0f172a);">Activity Feed</h3>
             </div>
-            <div id="log-status" style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 6px; padding: 5px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 99px;">
-                <span style="width: 7px; height: 7px; background: #cbd5e1; border-radius: 50%; display: inline-block;"></span>
-                Connecting...
+
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <!-- Search Input -->
+                <div class="log-search-wrapper">
+                    <span class="log-search-icon">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35"/></svg>
+                    </span>
+                    <input type="text" class="log-search-input" id="logSearch" placeholder="Search logs..." oninput="applyLogsFilter()">
+                    <button class="log-search-clear" id="logSearchClear" title="Clear" onclick="clearLogSearch()" style="display: none;">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <!-- Live Status -->
+                <div id="log-status" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted, #64748b); display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--bg, #f8fafc); border: 1px solid var(--card-border, #e2e8f0); border-radius: 99px; white-space: nowrap;">
+                    <span style="width: 6px; height: 6px; background: #cbd5e1; border-radius: 50%; display: inline-block;"></span>
+                    Connecting...
+                </div>
             </div>
         </div>
 
-        <!-- Legend -->
-        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;">
-            <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; font-weight: 700; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 9px; border-radius: 99px;">
-                <span style="width: 8px; height: 3px; background: #10b981; border-radius: 2px; display: inline-block;"></span>COIN
-            </span>
-            <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; font-weight: 700; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 9px; border-radius: 99px;">
-                <span style="width: 8px; height: 3px; background: #3b82f6; border-radius: 2px; display: inline-block;"></span>PORTAL
-            </span>
-            <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; font-weight: 700; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 9px; border-radius: 99px;">
-                <span style="width: 8px; height: 3px; background: #f59e0b; border-radius: 2px; display: inline-block;"></span>ADMIN
-            </span>
-            <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; font-weight: 700; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 9px; border-radius: 99px;">
-                <span style="width: 8px; height: 3px; background: #ef4444; border-radius: 2px; display: inline-block;"></span>SECURITY
-            </span>
-            <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; font-weight: 700; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 9px; border-radius: 99px;">
-                <span style="width: 8px; height: 3px; background: #94a3b8; border-radius: 2px; display: inline-block;"></span>SYSTEM
-            </span>
+        <!-- Filter Row -->
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--card-border, #f1f5f9);">
+            <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted, #64748b); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 4px;">Filter:</span>
+
+            <button class="log-filter-pill active all" data-filter="ALL" onclick="setLogFilter('ALL', this)">
+                <span>All</span>
+                <span class="log-count-badge" id="count-ALL">0</span>
+            </button>
+            <button class="log-filter-pill" data-filter="COIN" onclick="setLogFilter('COIN', this)" style="color: #10b981; background: rgba(16,185,129,0.08);">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; flex-shrink: 0; display: inline-block;"></span>
+                Coin
+                <span class="log-count-badge" id="count-COIN">0</span>
+            </button>
+            <button class="log-filter-pill" data-filter="PORTAL" onclick="setLogFilter('PORTAL', this)" style="color: #3b82f6; background: rgba(59,130,246,0.08);">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: #3b82f6; flex-shrink: 0; display: inline-block;"></span>
+                Portal
+                <span class="log-count-badge" id="count-PORTAL">0</span>
+            </button>
+            <button class="log-filter-pill" data-filter="ADMIN" onclick="setLogFilter('ADMIN', this)" style="color: #f59e0b; background: rgba(245,158,11,0.08);">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; display: inline-block;"></span>
+                Admin
+                <span class="log-count-badge" id="count-ADMIN">0</span>
+            </button>
+            <button class="log-filter-pill" data-filter="SECURITY" onclick="setLogFilter('SECURITY', this)" style="color: #ef4444; background: rgba(239,68,68,0.08);">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: #ef4444; flex-shrink: 0; display: inline-block;"></span>
+                Security
+                <span class="log-count-badge" id="count-SECURITY">0</span>
+            </button>
+            <button class="log-filter-pill" data-filter="SYSTEM" onclick="setLogFilter('SYSTEM', this)" style="color: #94a3b8; background: rgba(148,163,184,0.08);">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; flex-shrink: 0; display: inline-block;"></span>
+                System
+                <span class="log-count-badge" id="count-SYSTEM">0</span>
+            </button>
+
+            <!-- Results info -->
+            <span id="log-results-info" style="margin-left: auto; font-size: 0.72rem; color: var(--text-light, #94a3b8); font-weight: 600; white-space: nowrap;"></span>
         </div>
 
         <div class="logs-container">
             <div id="log-feed" class="logs-scroll-area">
-                {% for log in system_logs %}
-                <div class="log-item">
-                    <div class="log-item-bar"></div>
-                    <div class="log-item-content">
-                        <div class="log-time">
-                            <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
-                            {{ log.timestamp }}
-                        </div>
-                        <div class="log-message">{{ log.message }}</div>
-                    </div>
+                <div class="log-empty-state">
+                    <i data-lucide="loader-2" style="width: 28px; height: 28px; animation: spin 1s linear infinite; color: #6366f1;"></i>
+                    <p>Connecting to live stream...</p>
                 </div>
-                {% else %}
-                <div style="padding: 60px 20px; text-align: center; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                    <i data-lucide="inbox" style="width: 40px; height: 40px; color: #cbd5e1; margin-bottom: 12px;"></i>
-                    <p style="margin: 0; font-size: 0.9rem; font-weight: 600; color: #64748b;">No system events recorded yet.</p>
-                    <p style="margin: 5px 0 0; font-size: 0.82rem; color: #94a3b8;">Events will appear here automatically.</p>
-                </div>
-                {% endfor %}
             </div>
         </div>
+
+        <!-- Load More History Button -->
+        <button id="loadMoreBtn" onclick="loadMoreLogs()"
+                style="display: none; width: 100%; margin-top: 12px; padding: 11px 18px; border: 1.5px dashed var(--card-border, #e2e8f0); border-radius: 10px; background: var(--bg, #f8fafc); color: var(--text-muted, #64748b); font-family: inherit; font-size: 0.875rem; font-weight: 700; cursor: pointer; align-items: center; justify-content: center; gap: 8px; transition: all 0.18s ease;"
+                onmouseover="this.style.borderColor='#6366f1'; this.style.color='#6366f1'; this.style.background='rgba(99,102,241,0.04)'"
+                onmouseout="this.style.borderColor=''; this.style.color=''; this.style.background=''">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+            <span class="load-more-label">Load More History</span>
+        </button>
     </div>
 </div>
 
 <script>
-    const logFeed = document.getElementById('log-feed');
-    const statusText = document.getElementById('log-status');
-    let isUserScrolling = false;
+(function() {
+    const PAGE_SIZE      = 100;   // logs per REST page
+    const MAX_BUFFER     = 2000;  // max entries kept in memory
 
-    if (logFeed) {
-        logFeed.addEventListener('scroll', () => {
-            isUserScrolling = logFeed.scrollTop > 50;
-        });
+    // In-memory log buffer (newest first)
+    const logBuffer = [];
+
+    let activeFilter = 'ALL';
+    let searchQuery  = '';
+    let historyOffset = 0;   // current pagination offset for REST history
+    let historyTotal  = 0;   // total matching logs in file (from REST response)
+    let isLoadingMore = false;
+
+    // Per-category counts
+    const counts = { ALL: 0, COIN: 0, PORTAL: 0, ADMIN: 0, SECURITY: 0, SYSTEM: 0 };
+
+    /* =====================================================
+       CATEGORY / COLOR HELPERS
+    ===================================================== */
+    function getLogCategory(type) {
+        if (!type) return 'SYSTEM';
+        if (type === 'COIN_INSERT' || type === 'COIN_SUCCESS') return 'COIN';
+        if (type === 'PORTAL_EVENT') return 'PORTAL';
+        if (type === 'ADMIN_AUDIT') return 'ADMIN';
+        if (type === 'SECURITY_ALERT' || type === 'CRITICAL') return 'SECURITY';
+        return 'SYSTEM';
     }
 
     function getLogBarColor(type) {
-        if (!type) return '#e2e8f0';
-        if (type === "SECURITY_ALERT" || type === "CRITICAL") return '#ef4444';
-        if (type === "PORTAL_EVENT") return '#3b82f6';
-        if (type === "ADMIN_AUDIT") return '#f59e0b';
-        if (type === "COIN_INSERT" || type === "COIN_SUCCESS") return '#10b981';
-        if (type === "WARNING") return '#eab308';
+        const cat = getLogCategory(type);
+        if (cat === 'COIN')     return '#10b981';
+        if (cat === 'PORTAL')   return '#3b82f6';
+        if (cat === 'ADMIN')    return '#f59e0b';
+        if (cat === 'SECURITY') return '#ef4444';
+        if (type === 'WARNING') return '#eab308';
         return '#94a3b8';
     }
 
-    function getLogTypeColor(type) {
-        if (!type) return '#64748b';
-        if (type === "SECURITY_ALERT" || type === "CRITICAL") return '#ef4444';
-        if (type === "PORTAL_EVENT") return '#3b82f6';
-        if (type === "ADMIN_AUDIT") return '#f59e0b';
-        if (type === "COIN_INSERT" || type === "COIN_SUCCESS") return '#10b981';
-        if (type === "WARNING") return '#eab308';
-        return '#94a3b8';
+    function getLogTypeColor(type) { return getLogBarColor(type); }
+
+    /* =====================================================
+       HIGHLIGHT SEARCH TERM IN TEXT
+    ===================================================== */
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
+    function highlight(text, query) {
+        if (!query) return escapeHtml(text);
+        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return escapeHtml(text).replace(
+            new RegExp(escaped, 'gi'),
+            m => `<mark class="log-highlight">${m}</mark>`
+        );
+    }
+
+    /* =====================================================
+       BUILD A LOG ELEMENT
+    ===================================================== */
+    function buildLogElement(log) {
+        const barColor  = getLogBarColor(log.type);
+        const typeColor = getLogTypeColor(log.type);
+        const msgHtml   = highlight(log.message || '', searchQuery);
+        const tsHtml    = highlight(log.timestamp || '', searchQuery);
+        const typeStr   = log.type ? `[${log.type}]` : '';
+        const typeHtml  = highlight(typeStr, searchQuery);
+
+        const div = document.createElement('div');
+        div.className = 'log-item';
+        div.dataset.category = getLogCategory(log.type);
+        div.innerHTML = `
+            <div class="log-item-bar" style="background: ${barColor};"></div>
+            <div class="log-item-content">
+                <div class="log-time">
+                    <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity:0.6; flex-shrink:0;">
+                        <circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/>
+                    </svg>
+                    ${tsHtml}
+                </div>
+                <div class="log-message">
+                    <span style="font-size: 0.68rem; font-weight: 800; color: ${typeColor}; margin-right: 8px; letter-spacing: 0.04em; font-family: ui-monospace, monospace;">${typeHtml}</span>${msgHtml}
+                </div>
+            </div>`;
+        return div;
+    }
+
+    /* =====================================================
+       FILTER BUFFER CLIENT-SIDE (for search)
+    ===================================================== */
+    function getFilteredBuffer() {
+        const query = searchQuery.toLowerCase().trim();
+        return logBuffer.filter(log => {
+            const catMatch = activeFilter === 'ALL' || getLogCategory(log.type) === activeFilter;
+            if (!catMatch) return false;
+            if (!query) return true;
+            return (
+                (log.message || '').toLowerCase().includes(query) ||
+                (log.timestamp || '').toLowerCase().includes(query) ||
+                (log.type || '').toLowerCase().includes(query)
+            );
+        });
+    }
+
+    /* =====================================================
+       RENDER FEED FROM BUFFER
+    ===================================================== */
+    function renderFeed() {
+        const feed = document.getElementById('log-feed');
+        if (!feed) return;
+
+        const visible = getFilteredBuffer();
+        const infoEl  = document.getElementById('log-results-info');
+        const hasActiveFilter = activeFilter !== 'ALL' || searchQuery.trim() !== '';
+
+        if (infoEl) {
+            if (hasActiveFilter) {
+                infoEl.textContent = `${visible.length} match${visible.length !== 1 ? 'es' : ''} in buffer`;
+            } else {
+                infoEl.textContent = `${logBuffer.length} event${logBuffer.length !== 1 ? 's' : ''} loaded`;
+            }
+        }
+
+        const fragment = document.createDocumentFragment();
+
+        if (visible.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'log-empty-state';
+            if (hasActiveFilter) {
+                empty.innerHTML = `
+                    <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity:0.4; color: #94a3b8;">
+                        <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <p>No logs match your filter.</p>
+                    <span>Try a different search term or category.</span>`;
+            } else {
+                empty.innerHTML = `
+                    <svg width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity:0.4; color: #cbd5e1;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0H4"/>
+                    </svg>
+                    <p>No events recorded yet.</p>
+                    <span>Events will appear automatically.</span>`;
+            }
+            fragment.appendChild(empty);
+        } else {
+            visible.forEach(log => fragment.appendChild(buildLogElement(log)));
+        }
+
+        feed.innerHTML = '';
+        feed.appendChild(fragment);
+        updateLoadMoreBtn();
+    }
+
+    /* =====================================================
+       UPDATE COUNTS
+    ===================================================== */
+    function rebuildCounts() {
+        const keys = ['ALL', 'COIN', 'PORTAL', 'ADMIN', 'SECURITY', 'SYSTEM'];
+        keys.forEach(k => counts[k] = 0);
+        logBuffer.forEach(log => {
+            counts.ALL++;
+            const cat = getLogCategory(log.type);
+            counts[cat] = (counts[cat] || 0) + 1;
+        });
+        keys.forEach(k => {
+            const el = document.getElementById('count-' + k);
+            if (el) el.textContent = counts[k];
+        });
+    }
+
+    /* =====================================================
+       LOAD MORE (REST API pagination)
+    ===================================================== */
+    function updateLoadMoreBtn() {
+        const btn = document.getElementById('loadMoreBtn');
+        if (!btn) return;
+
+        // How many are still in the file beyond what's in buffer
+        const remaining = historyTotal - logBuffer.length;
+
+        if (remaining > 0 && activeFilter === 'ALL' && !searchQuery.trim()) {
+            btn.style.display = 'flex';
+            btn.querySelector('.load-more-label').textContent =
+                `Load More History (${Math.min(PAGE_SIZE, remaining)} of ${remaining} remaining)`;
+        } else if (remaining > 0 && (activeFilter !== 'ALL' || searchQuery.trim())) {
+            btn.style.display = 'flex';
+            btn.querySelector('.load-more-label').textContent =
+                `Load More History`;
+        } else {
+            btn.style.display = 'none';
+        }
+    }
+
+    async function loadHistoryPage(offset, filter, query) {
+        const params = new URLSearchParams({ limit: PAGE_SIZE, offset });
+        if (filter && filter !== 'ALL') params.set('log_type', filter);
+        // Note: search is purely client-side (REST doesn't support text search)
+
+        const res = await fetch(`/admin/api/logs?${params}`);
+        if (!res.ok) throw new Error('Failed to fetch logs');
+        return await res.json(); // { logs, total, offset, limit }
+    }
+
+    window.loadMoreLogs = async function() {
+        if (isLoadingMore) return;
+        isLoadingMore = true;
+
+        const btn = document.getElementById('loadMoreBtn');
+        const label = btn && btn.querySelector('.load-more-label');
+        if (label) label.textContent = 'Loading...';
+
+        try {
+            const data = await loadHistoryPage(historyOffset, activeFilter, searchQuery);
+            const newLogs = data.logs || [];
+            historyTotal  = data.total || 0;
+            historyOffset += newLogs.length;
+
+            // Append (older entries) to end of buffer
+            newLogs.forEach(log => {
+                if (!logBuffer.find(e => e.timestamp === log.timestamp && e.message === log.message)) {
+                    logBuffer.push(log);
+                }
+            });
+
+            if (logBuffer.length > MAX_BUFFER) logBuffer.splice(MAX_BUFFER);
+
+            rebuildCounts();
+            renderFeed();
+        } catch (e) {
+            console.error('Load more failed:', e);
+        } finally {
+            isLoadingMore = false;
+        }
+    };
+
+    /* =====================================================
+       INITIAL HISTORY LOAD (REST API)
+    ===================================================== */
+    async function loadInitialHistory() {
+        try {
+            const data = await loadHistoryPage(0, 'ALL', '');
+            const logs = data.logs || [];
+            historyTotal  = data.total || 0;
+            historyOffset = logs.length;
+
+            logBuffer.length = 0;
+            logs.forEach(log => logBuffer.push(log));
+
+            rebuildCounts();
+            renderFeed();
+        } catch (e) {
+            console.error('Initial history load failed:', e);
+        }
+    }
+
+    /* =====================================================
+       FILTER / SEARCH CONTROLS
+    ===================================================== */
+    window.setLogFilter = function(filter, btn) {
+        activeFilter  = filter;
+        historyOffset = 0; // reset pagination context
+
+        document.querySelectorAll('.log-filter-pill').forEach(b => {
+            b.classList.remove('active');
+            if (b.dataset.filter === 'ALL') b.classList.remove('all');
+        });
+        if (btn) {
+            btn.classList.add('active');
+            if (filter === 'ALL') btn.classList.add('all');
+        }
+
+        renderFeed();
+    };
+
+    window.applyLogsFilter = function() {
+        const inp = document.getElementById('logSearch');
+        searchQuery = inp ? inp.value : '';
+        const clearBtn = document.getElementById('logSearchClear');
+        if (clearBtn) clearBtn.style.display = searchQuery ? 'flex' : 'none';
+        renderFeed();
+    };
+
+    window.clearLogSearch = function() {
+        const inp = document.getElementById('logSearch');
+        if (inp) { inp.value = ''; inp.focus(); }
+        searchQuery = '';
+        const clearBtn = document.getElementById('logSearchClear');
+        if (clearBtn) clearBtn.style.display = 'none';
+        renderFeed();
+    };
+
+    /* =====================================================
+       LIVE WEBSOCKET
+    ===================================================== */
     function connectLogStream() {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/admin/ws/logs`;
-        const ws = new WebSocket(wsUrl);
+        const statusText = document.getElementById('log-status');
+        const protocol   = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws         = new WebSocket(`${protocol}//${window.location.host}/admin/ws/logs`);
 
         ws.onopen = () => {
-            statusText.innerHTML = `<span style="width: 7px; height: 7px; background: #10b981; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 2px rgba(16,185,129,0.3), 0 0 8px rgba(16,185,129,0.4); animation: pulse-dot 2s ease-in-out infinite;"></span> Live Stream`;
-            statusText.style.color = '#10b981';
-            statusText.style.borderColor = 'rgba(16,185,129,0.2)';
-            statusText.style.background = 'rgba(16,185,129,0.05)';
-            if (logFeed) logFeed.innerHTML = "";
+            if (statusText) {
+                statusText.innerHTML = `<span style="width:6px;height:6px;background:#10b981;border-radius:50%;display:inline-block;animation:pulse-dot 2s ease-in-out infinite;box-shadow:0 0 0 3px rgba(16,185,129,0.2);"></span> Live Stream`;
+                statusText.style.color = '#10b981';
+                statusText.style.borderColor = 'rgba(16,185,129,0.25)';
+                statusText.style.background = 'rgba(16,185,129,0.07)';
+            }
         };
 
         ws.onmessage = (event) => {
-            const log = JSON.parse(event.data);
-            const barColor = getLogBarColor(log.type);
-            const typeColor = getLogTypeColor(log.type);
+            try {
+                const log = JSON.parse(event.data);
+                const cat = getLogCategory(log.type);
 
-            const logItem = document.createElement('div');
-            logItem.className = 'log-item';
-            logItem.innerHTML = `
-                <div class="log-item-bar" style="background: ${barColor};"></div>
-                <div class="log-item-content">
-                    <div class="log-time">
-                        <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
-                        ${log.timestamp}
-                    </div>
-                    <div class="log-message">
-                        <span style="font-size: 0.7rem; font-weight: 800; color: ${typeColor}; margin-right: 8px; letter-spacing: 0.05em; font-family: ui-monospace, monospace;">[${log.type}]</span>
-                        ${log.message}
-                    </div>
-                </div>`;
+                // Skip if already in buffer (WS initial load overlaps with REST history)
+                const isDupe = logBuffer.some(
+                    e => e.timestamp === log.timestamp && e.type === log.type && e.message === log.message
+                );
+                if (isDupe) return;
 
-            logFeed.prepend(logItem);
+                // Prepend (newest first)
+                logBuffer.unshift(log);
+                if (logBuffer.length > MAX_BUFFER) logBuffer.pop();
 
-            if (logFeed.children.length > 150) logFeed.removeChild(logFeed.lastChild);
+                // Update counts
+                counts.ALL++;
+                counts[cat] = (counts[cat] || 0) + 1;
+                const el = document.getElementById('count-' + cat);
+                if (el) el.textContent = counts[cat];
+                const allEl = document.getElementById('count-ALL');
+                if (allEl) allEl.textContent = counts.ALL;
 
-            if (typeof lucide !== 'undefined') lucide.createIcons({root: logItem});
-
-            if (!isUserScrolling) logFeed.scrollTop = 0;
+                renderFeed();
+            } catch (e) {
+                console.error('Log parse error:', e);
+            }
         };
 
         ws.onclose = () => {
-            statusText.innerHTML = `<span style="width: 7px; height: 7px; background: #ef4444; border-radius: 50%; display: inline-block;"></span> Reconnecting...`;
-            statusText.style.color = '#ef4444';
-            statusText.style.borderColor = 'rgba(239,68,68,0.2)';
-            statusText.style.background = 'rgba(239,68,68,0.05)';
+            if (statusText) {
+                statusText.innerHTML = `<span style="width:6px;height:6px;background:#ef4444;border-radius:50%;display:inline-block;"></span> Reconnecting...`;
+                statusText.style.color = '#ef4444';
+                statusText.style.borderColor = 'rgba(239,68,68,0.2)';
+                statusText.style.background = 'rgba(239,68,68,0.06)';
+            }
             setTimeout(connectLogStream, 3000);
         };
 
-        ws.onerror = () => { ws.close(); };
+        ws.onerror = () => ws.close();
     }
 
-    connectLogStream();
+    /* =====================================================
+       BOOT
+    ===================================================== */
+    loadInitialHistory().then(() => {
+        connectLogStream();
+    });
+
+})();
 </script>

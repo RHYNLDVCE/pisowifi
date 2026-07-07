@@ -65,7 +65,6 @@ def admin_panel(
 
     banner_files = sys_ops.get_banners(state.config.get("banner_order", []))
     sound_files = sys_ops.get_sounds()
-    system_logs = sys_ops.get_system_logs()
 
     return templates.TemplateResponse("admin.html", {
         "request": request, 
@@ -92,7 +91,7 @@ def admin_panel(
         "sound_files": sound_files,
         "sound_insert_selected": state.config.get("sound_insert", "insert_coin_sound.mp3"),
         "sound_coin_selected": state.config.get("sound_coin", "coin-recieved.mp3"),
-        "system_logs": system_logs
+        "system_logs": sys_ops.get_system_logs(limit=200).get("logs", [])
     })
 
 @router.get("/admin/system_stats")
@@ -123,8 +122,15 @@ def get_infrastructure_devices(authorized: bool = Depends(security.is_admin), ne
     return {"devices": devices}
 
 @router.get("/admin/api/logs")
-async def get_logs_json(authorized: bool = Depends(security.is_admin), sys_ops: SystemOps = Depends(get_system_ops)):
-    return {"logs": sys_ops.get_system_logs(limit=100)}
+async def get_logs_json(
+    authorized: bool = Depends(security.is_admin),
+    sys_ops: SystemOps = Depends(get_system_ops),
+    limit: int = 100,
+    offset: int = 0,
+    log_type: str = None
+):
+    """Paginated log history. Supports limit, offset, and log_type (COIN/PORTAL/ADMIN/SECURITY/SYSTEM/ALL)."""
+    return sys_ops.get_system_logs(limit=limit, offset=offset, log_type=log_type)
 
 
 @router.websocket("/admin/ws/logs")
@@ -137,7 +143,7 @@ async def websocket_logs(websocket: WebSocket):
         with open("system.log", "r") as f:
             # 1. Grab the last 50 lines for the initial load
             lines = f.readlines()
-            last_lines = lines[-50:] if len(lines) > 50 else lines
+            last_lines = lines[-200:] if len(lines) > 200 else lines
             
             for line in last_lines:
                 match = log_pattern.search(line)
