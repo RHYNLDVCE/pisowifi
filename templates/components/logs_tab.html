@@ -106,6 +106,8 @@
         color: var(--text-light, #94a3b8);
         display: flex;
         align-items: center;
+        justify-content: center;
+        height: 100%;
     }
 
     .log-search-clear {
@@ -476,11 +478,21 @@
     function rebuildCounts() {
         const keys = ['ALL', 'COIN', 'PORTAL', 'ADMIN', 'SECURITY', 'SYSTEM'];
         keys.forEach(k => counts[k] = 0);
+        
+        const query = searchQuery.toLowerCase().trim();
+        
         logBuffer.forEach(log => {
+            if (query) {
+                const matches = (log.message || '').toLowerCase().includes(query) ||
+                                (log.timestamp || '').toLowerCase().includes(query) ||
+                                (log.type || '').toLowerCase().includes(query);
+                if (!matches) return;
+            }
             counts.ALL++;
             const cat = getLogCategory(log.type);
             counts[cat] = (counts[cat] || 0) + 1;
         });
+        
         keys.forEach(k => {
             const el = document.getElementById('count-' + k);
             if (el) el.textContent = counts[k];
@@ -596,6 +608,7 @@
         searchQuery = inp ? inp.value : '';
         const clearBtn = document.getElementById('logSearchClear');
         if (clearBtn) clearBtn.style.display = searchQuery ? 'flex' : 'none';
+        rebuildCounts();
         renderFeed();
     };
 
@@ -605,6 +618,7 @@
         searchQuery = '';
         const clearBtn = document.getElementById('logSearchClear');
         if (clearBtn) clearBtn.style.display = 'none';
+        rebuildCounts();
         renderFeed();
     };
 
@@ -640,13 +654,8 @@
                 logBuffer.unshift(log);
                 if (logBuffer.length > MAX_BUFFER) logBuffer.pop();
 
-                // Update counts
-                counts.ALL++;
-                counts[cat] = (counts[cat] || 0) + 1;
-                const el = document.getElementById('count-' + cat);
-                if (el) el.textContent = counts[cat];
-                const allEl = document.getElementById('count-ALL');
-                if (allEl) allEl.textContent = counts.ALL;
+                // Re-evaluate counts with active search and re-render
+                rebuildCounts();
 
                 renderFeed();
             } catch (e) {
