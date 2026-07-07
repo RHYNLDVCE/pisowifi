@@ -291,8 +291,14 @@
                 <span class="log-count-badge" id="count-SYSTEM">0</span>
             </button>
 
-            <!-- Results info -->
-            <span id="log-results-info" style="margin-left: auto; font-size: 0.72rem; color: var(--text-light, #94a3b8); font-weight: 600; white-space: nowrap;"></span>
+            <!-- Results info and reset -->
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+                <button id="resetLogsBtn" onclick="resetLogFeed()" style="display: none; background: none; border: none; color: #ef4444; font-size: 0.72rem; font-weight: 700; cursor: pointer; padding: 0; align-items: center; gap: 4px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.7" onmouseout="this.style.opacity=1">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    Clear History
+                </button>
+                <span id="log-results-info" style="font-size: 0.72rem; color: var(--text-light, #94a3b8); font-weight: 600; white-space: nowrap;"></span>
+            </div>
         </div>
 
         <div class="logs-container">
@@ -333,6 +339,32 @@
 
     // Per-category counts
     const counts = { ALL: 0, COIN: 0, PORTAL: 0, ADMIN: 0, SECURITY: 0, SYSTEM: 0 };
+
+    /* =====================================================
+       CHRONOLOGICAL SORTING
+    ===================================================== */
+    function parseLogDate(ts) {
+        if (!ts || ts === '--') return 0;
+        const parts = ts.split(' ');
+        if (parts.length < 3) return new Date(ts).getTime() || 0;
+        const datePart = parts[0];
+        const timePart = parts[1];
+        const ampm = parts[2].toUpperCase();
+        
+        const timeSplits = timePart.split(':');
+        let h = parseInt(timeSplits[0], 10);
+        const m = parseInt(timeSplits[1], 10);
+        const s = parseInt(timeSplits[2], 10);
+        
+        if (ampm === 'PM' && h < 12) h += 12;
+        if (ampm === 'AM' && h === 12) h = 0;
+        
+        return new Date(`${datePart}T${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`).getTime();
+    }
+
+    function sortLogBuffer() {
+        logBuffer.sort((a, b) => parseLogDate(b.timestamp) - parseLogDate(a.timestamp));
+    }
 
     /* =====================================================
        CATEGORY / COLOR HELPERS
@@ -440,6 +472,12 @@
             } else {
                 infoEl.textContent = `${logBuffer.length} event${logBuffer.length !== 1 ? 's' : ''} loaded`;
             }
+        }
+        
+        const resetBtn = document.getElementById('resetLogsBtn');
+        if (resetBtn) {
+            // Show clear button if buffer is larger than base page size
+            resetBtn.style.display = logBuffer.length > PAGE_SIZE ? 'flex' : 'none';
         }
 
         const fragment = document.createDocumentFragment();
@@ -553,7 +591,8 @@
                 }
             });
 
-            if (logBuffer.length > MAX_BUFFER) logBuffer.splice(MAX_BUFFER);
+            sortLogBuffer();
+            if (logBuffer.length > MAX_BUFFER) logBuffer.length = MAX_BUFFER;
 
             rebuildCounts();
             renderFeed();
@@ -576,13 +615,36 @@
 
             logBuffer.length = 0;
             logs.forEach(log => logBuffer.push(log));
-
+            
+            sortLogBuffer();
             rebuildCounts();
             renderFeed();
         } catch (e) {
             console.error('Initial history load failed:', e);
         }
     }
+
+    window.resetLogFeed = function() {
+        logBuffer.length = 0;
+        historyOffset = 0;
+        historyTotal = 0;
+        const resetBtn = document.getElementById('resetLogsBtn');
+        if (resetBtn) resetBtn.style.display = 'none';
+
+        const feed = document.getElementById('log-feed');
+        if (feed) {
+            feed.innerHTML = `
+                <div class="log-empty-state">
+                    <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity:0.4; color: #6366f1; animation: spin 1s linear infinite;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/>
+                    </svg>
+                    <p>Reloading recent events...</p>
+                </div>
+            `;
+        }
+        
+        loadInitialHistory();
+    };
 
     /* =====================================================
        FILTER / SEARCH CONTROLS
@@ -650,9 +712,10 @@
                 );
                 if (isDupe) return;
 
-                // Prepend (newest first)
-                logBuffer.unshift(log);
-                if (logBuffer.length > MAX_BUFFER) logBuffer.pop();
+                // Add and enforce limit
+                logBuffer.push(log);
+                sortLogBuffer();
+                if (logBuffer.length > MAX_BUFFER) logBuffer.length = MAX_BUFFER;
 
                 // Re-evaluate counts with active search and re-render
                 rebuildCounts();
