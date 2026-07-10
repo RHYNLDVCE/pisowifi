@@ -325,6 +325,19 @@
         backdrop-filter: blur(8px);
     }
 
+    .viewer-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        z-index: 9999;
+        display: none;
+        justify-content: center;
+        align-items: center;
+    }
+
     .modal-card {
         background: var(--card-bg);
         color: var(--text-main);
@@ -549,7 +562,7 @@
 
         <div id="bannerWrapper">
             {% for banner in banners %}
-            <img src="{{ banner }}" class="carousel-slide">
+            <img src="{{ banner }}" class="carousel-slide" onclick="openImageViewer('{{ banner }}')" style="cursor: pointer;">
             {% endfor %}
         </div>
 
@@ -698,6 +711,10 @@
         </p>
         <button class="btn btn-main" onclick="closeSuccessModal()">Start Browsing</button>
     </div>
+</div>
+
+<div id="imageViewerModal" class="viewer-overlay" onclick="closeImageViewer()">
+    <img id="viewerImage" src="" style="max-width: 95%; max-height: 95%; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);" onclick="event.stopPropagation()">
 </div>
 
 <div id="toastContainer" class="toast-container"></div>
@@ -1150,6 +1167,16 @@
     function claimFreeTime() { document.getElementById('confirmModal').style.display = 'flex'; }
     function closeConfirmModal() { document.getElementById('confirmModal').style.display = 'none'; }
     function closeSuccessModal() { document.getElementById('successModal').style.display = 'none'; window.location.reload(); }
+
+    function openImageViewer(src) {
+        document.getElementById('viewerImage').src = src;
+        document.getElementById('imageViewerModal').style.display = 'flex';
+    }
+
+    function closeImageViewer() {
+        document.getElementById('imageViewerModal').style.display = 'none';
+        document.getElementById('viewerImage').src = '';
+    }
 
     function proceedClaim() {
         closeConfirmModal();
