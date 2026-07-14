@@ -35,6 +35,9 @@ class SessionService:
             if user["time"] > 0:
                 user["status"] = "connected"
                 user["last_active"] = time.time()
+                # Set the deadline timestamp — this is the single source of truth
+                # for the timer while the user is connected.
+                user["expires_at"] = time.time() + user["time"]
                 firewall.allow_user(mac, user.get("ip"))
                 
                 if controller.current_slot_user == mac:
@@ -57,16 +60,21 @@ class SessionService:
     def pause_user(self, mac: str) -> dict:
         if state.users.get(mac, {}).get("status") == "blocked": return {"result": "fail"}
         if state.users.get(mac) and state.users[mac]["status"] == "connected":
-            state.users[mac]["status"] = "paused"
+            user = state.users[mac]
+            # Snapshot true remaining seconds from deadline before clearing it
+            if "expires_at" in user:
+                user["time"] = max(0, int(user["expires_at"] - time.time()))
+                del user["expires_at"]
+            user["status"] = "paused"
             firewall.block_user(mac)
-            database.sync_user(mac, state.users[mac])
+            database.sync_user(mac, user)
             
             if mac in state.manager.active_connections:
                 background.send_ws_update(mac, {
                     "type": "sync", "status": "paused",
-                    "time_remaining": state.users[mac]["time"],
-                    "balance": state.users[mac].get("balance", 0),
-                    "points": state.users[mac].get("points", 0)
+                    "time_remaining": user["time"],
+                    "balance": user.get("balance", 0),
+                    "points": user.get("points", 0)
                 })
             return {"result": "success"}
         return {"result": "fail"}

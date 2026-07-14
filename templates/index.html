@@ -825,6 +825,7 @@
             var data = JSON.parse(event.data);
             if (data.type === "sync") {
                 localTime = data.time_remaining;
+                updateTimerDisplay(localTime);  // Immediately snap display to backend's authoritative time
                 updateUI(data);
             } else if (data.type === "slot_opened") {
                 localTime = data.time_remaining;

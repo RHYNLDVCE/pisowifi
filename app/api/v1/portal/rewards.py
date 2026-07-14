@@ -23,6 +23,7 @@ def claim_free_time(mac: str):
     user["free_claimed"] = 1
     user["status"] = "connected"
     user["last_active"] = time.time()
+    user["expires_at"] = time.time() + user["time"]  # set deadline
     firewall.allow_user(mac, user.get("ip"))
     
     if controller.current_slot_user == mac: controller.turn_slot_off()
@@ -72,6 +73,7 @@ def redeem_points(data: dict, request: Request):
     user["time"] += target_promo["minutes"] * 60
     user["status"] = "connected"
     user["last_active"] = time.time()
+    user["expires_at"] = time.time() + user["time"]  # set deadline
     
     firewall.allow_user(mac, user.get("ip"))
     database.sync_user(mac, user)

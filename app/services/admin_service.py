@@ -1,3 +1,4 @@
+import time
 import math
 from datetime import datetime, timedelta
 from core import database, state
@@ -34,11 +35,17 @@ class AdminService:
             
             if state.users[mac]["time"] == 0 and state.users[mac]["status"] == "connected":
                 state.users[mac]["status"] = "expired"
+                state.users[mac].pop("expires_at", None)
                 firewall.block_user(mac)
             
             if action == "add" and state.users[mac]["time"] > 0 and state.users[mac]["status"] == "expired":
                  state.users[mac]["status"] = "connected"
+                 state.users[mac]["expires_at"] = time.time() + state.users[mac]["time"]
                  firewall.allow_user(mac, state.users[mac].get("ip"))
+            
+            # If user is still connected, update deadline to reflect the new time
+            if state.users[mac]["status"] == "connected":
+                state.users[mac]["expires_at"] = time.time() + state.users[mac]["time"]
 
             database.sync_user(mac, state.users[mac])
 

@@ -45,17 +45,28 @@ class TimerService:
                 
     def tick_users(self, ticks: int):
         users_to_sync = []
-        
+        now = time.time()
+
         for mac, data in list(state.users.items()):
             status = data.get("status")
-            time_left = data.get("time", 0)
-            
-            # Decrement time
-            if status == "connected" and time_left > 0:
-                data["time"] -= 1
-                if data["time"] <= 0:
+
+            if status == "connected":
+                expires_at = data.get("expires_at")
+
+                if expires_at is None:
+                    # Safety: user is connected but has no deadline (e.g. after a restart).
+                    # Reconstruct the deadline from the stored remaining seconds.
+                    data["expires_at"] = now + data.get("time", 0)
+                    expires_at = data["expires_at"]
+
+                # Compute true time left from the wall clock — always exact, never drifts
+                time_left = expires_at - now
+                data["time"] = max(0, int(time_left))  # keep "time" in sync for DB writes
+
+                if time_left <= 0:
                     data["time"] = 0
                     data["status"] = "expired"
+                    data.pop("expires_at", None)
                     try:
                         from core.logger import system_log
                         system_log(f"[TIMER] User {mac} (IP: {data.get('ip')}) out of time. Disconnecting...")
@@ -65,7 +76,7 @@ class TimerService:
                         import logging
                         logging.error(f"Firewall block error: {e}")
 
-            # Queue DB sync every 30 seconds
+            # Queue DB sync every 30 seconds (data["time"] is already up-to-date above)
             if ticks >= 30 and data.get("status") == "connected":
                 users_to_sync.append((mac, data))
 
